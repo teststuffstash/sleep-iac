@@ -1,0 +1,14 @@
+# OpenRouter key for sleep-tracking's coding agent — minted + budget-capped by the in-cluster
+# openrouter-operator (kopf). Replaces the cloudopsworks Terraform Workspace, which couldn't
+# reconcile (provider bug, homelab issue #20). The operator mints the key on OpenRouter and writes
+# it to the `sleep-tracking-openrouter` Secret (OPENROUTER_API_KEY) in this namespace.
+apiVersion: openrouter.teststuff.net/v1alpha1
+kind: OpenRouterKey
+metadata:
+  name: sleep-tracking
+  namespace: sleep-tracking
+spec:
+  project: sleep-tracking
+  budgetUSD: 5 # USD per week — caps a runaway agent's blast radius (matches the old TF Workspace)
+  resetInterval: weekly
+  guardrail: only-free # declared for intent; guardrail-assign is not yet wired in the operator

@@ -1,0 +1,47 @@
+# Minimal "Goose in a pod" validation (homelab docs/agents/ Step 2). Proves: Goose runs in a
+# cluster pod, the operator-minted OPENROUTER_API_KEY works, and Goose reaches OpenRouter. NOT the
+# real fixer yet (that needs the devbox toolchain image + the .agents/fix.yaml recipe) — this just
+# closes the loop on the runtime + key mechanism. Run: kubectl apply -f, then check logs for POD_GOOSE_OK.
+# Key source: the `sleep-tracking-openrouter` Secret, minted + budget-capped by the in-cluster
+# openrouter-operator from the GitOps `OpenRouterKey` CR (infra/openrouter-key.yaml, homelab ADR-081).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: goose-validate
+  namespace: sleep-tracking
+spec:
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 1800
+  template:
+    metadata:
+      labels: { app: goose-validate }
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: goose
+          image: debian:bookworm-slim
+          env:
+            - name: OPENROUTER_API_KEY
+              valueFrom:
+                secretKeyRef: { name: sleep-tracking-openrouter, key: OPENROUTER_API_KEY }
+            - name: GOOSE_PROVIDER
+              value: "openrouter"
+            - name: GOOSE_MODEL
+              value: "openrouter/free"
+            - name: GOOSE_MODE
+              value: "auto"
+            - name: HOME
+              value: "/root"
+          command: ["/bin/bash", "-lc"]
+          args:
+            - |
+              set -euo pipefail
+              apt-get update -qq && apt-get install -y -qq curl ca-certificates bzip2 libxcb1 >/dev/null
+              curl -fsSL https://github.com/block/goose/releases/download/stable/download_cli.sh | CONFIGURE=false bash
+              export PATH="$HOME/.local/bin:$PATH"
+              echo "=== goose version ===" && goose --version
+              echo "=== run ==="
+              goose run -t "Reply with exactly this token and nothing else: POD_GOOSE_OK"
+          resources:
+            requests: { cpu: "250m", memory: "512Mi" }
+            limits: { cpu: "1", memory: "1Gi" }

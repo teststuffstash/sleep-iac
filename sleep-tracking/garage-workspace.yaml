@@ -1,0 +1,91 @@
+# App-owned Garage resources for sleep-tracking — reconciled in-cluster by Crossplane
+# provider-terraform (homelab ADR-076), replacing the old app-repo `tofu`.
+#
+# This app already had LIVE buckets with data (sleep-db holds the ingester's SQLite sleep
+# history), so the module ADOPTS the existing buckets/keys/grants via config-driven
+# `import` blocks — it never recreates them. The key *secrets* aren't retrievable on import
+# (Garage doesn't return them), so they were published to Infisical from the old tofu state
+# and are delivered to the CronJob via ESO (see externalsecret).
+#
+# deletionPolicy: Orphan — deleting this Workspace must NOT `terraform destroy` the buckets
+# (that would delete the sleep history). Resources are managed but never auto-deleted.
+apiVersion: tf.upbound.io/v1beta1
+kind: Workspace
+metadata:
+  name: sleep-tracking-garage
+spec:
+  deletionPolicy: Orphan
+  providerConfigRef:
+    name: default
+  forProvider:
+    source: Inline
+    module: |
+      # --- adopt the existing live resources (no recreate) ---
+      import {
+        to = garage_bucket.sleep_band
+        id = "4f92b67b5643266f10fa2d8e719f830b07499b6497646fa46091240288aff0c1"
+      }
+      import {
+        to = garage_bucket.sleep_db
+        id = "f04a5834ec00217460386bbe5ecd3872c1c57e2b7d6400291d9ddfd4411e4223"
+      }
+      import {
+        to = garage_key.band_writer
+        id = "GKbf6d92a7a9dacbb2a835971c"
+      }
+      import {
+        to = garage_key.ingester
+        id = "GK9c19b381eb33d878ffa7adcf"
+      }
+      import {
+        to = garage_key.ingester_rw
+        id = "GK5294703bc0b26aa86e2fbbd2"
+      }
+      import {
+        to = garage_bucket_permission.band_writer_write
+        id = "4f92b67b5643266f10fa2d8e719f830b07499b6497646fa46091240288aff0c1/GKbf6d92a7a9dacbb2a835971c"
+      }
+      import {
+        to = garage_bucket_permission.ingester_read
+        id = "4f92b67b5643266f10fa2d8e719f830b07499b6497646fa46091240288aff0c1/GK9c19b381eb33d878ffa7adcf"
+      }
+      import {
+        to = garage_bucket_permission.ingester_rw_readwrite
+        id = "f04a5834ec00217460386bbe5ecd3872c1c57e2b7d6400291d9ddfd4411e4223/GK5294703bc0b26aa86e2fbbd2"
+      }
+
+      # --- the resources (must match the live config so import is a no-op diff) ---
+      resource "garage_bucket" "sleep_band" { global_alias = "sleep-band" }
+      resource "garage_bucket" "sleep_db"   { global_alias = "sleep-db" }
+
+      resource "garage_key" "band_writer" { name = "sleep-band-writer" }  # phone (FolderSync): rw on sleep-band
+      resource "garage_key" "ingester"    { name = "sleep-ingester" }     # CronJob: read sleep-band (+ sleep-snore, granted by snore-recorder)
+      resource "garage_key" "ingester_rw" { name = "sleep-ingester-rw" }  # CronJob: rw on sleep-db (the store)
+
+      resource "garage_bucket_permission" "band_writer_write" {
+        bucket_id = garage_bucket.sleep_band.id
+        access_key_id = garage_key.band_writer.id
+        read = true
+        write = true
+        owner = false
+      }
+      resource "garage_bucket_permission" "ingester_read" {
+        bucket_id = garage_bucket.sleep_band.id
+        access_key_id = garage_key.ingester.id
+        read = true
+        write = false
+        owner = false
+      }
+      resource "garage_bucket_permission" "ingester_rw_readwrite" {
+        bucket_id = garage_bucket.sleep_db.id
+        access_key_id = garage_key.ingester_rw.id
+        read = true
+        write = true
+        owner = false
+      }
+
+      output "sleep_band_bucket_id" { value = garage_bucket.sleep_band.id }
+      output "sleep_db_bucket_id"   { value = garage_bucket.sleep_db.id }
+  writeConnectionSecretToRef:
+    namespace: sleep-tracking
+    name: sleep-tracking-garage-conn

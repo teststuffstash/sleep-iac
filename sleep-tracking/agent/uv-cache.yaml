@@ -1,0 +1,16 @@
+# Shared uv (PyPI wheel) cache for the agent sandbox. `devbox run ci` runs `uv sync --frozen`, which
+# pulls wheels from PyPI — outside the homelab nix pull-through cache. This RWX PVC lets ephemeral
+# agent pods reuse the download across runs (mounted at /uv-cache, UV_CACHE_DIR, by agent-session.sh
+# when this PVC exists). RWX (ReadWriteMany) so concurrent agent pods can share it; pure cache, so
+# loss just means a re-download. Apply with kubectl (sleep-tracking/agent/ is not in the ArgoCD recursive sync (recurse:false)).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: agent-uv-cache
+  namespace: sleep-tracking
+spec:
+  accessModes: ["ReadWriteMany"]
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 5Gi

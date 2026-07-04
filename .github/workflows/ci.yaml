@@ -1,0 +1,44 @@
+# sleep-iac CI — thin. All logic lives in `devbox run ci` (devbox.json + scripts/ci.sh), so the
+# exact same gate runs locally and here, and tool versions are pinned by devbox, not by this YAML.
+# The job id `ci` is the required status check (tofu/github protected_repos in the homelab repo).
+#
+# Runs on the homelab self-hosted runner (Actions Runner Controller, ephemeral laptop tier):
+# runs-on: homelab-ephemeral.
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  ci:
+    runs-on: homelab-ephemeral
+    steps:
+      - uses: actions/checkout@v4
+
+      # The ARC runner is a container with no systemd, so devbox's own (daemon-based) Nix
+      # installer fails. Install Nix in SINGLE-USER mode (--no-daemon) ourselves, then tell
+      # devbox to reuse it. See homelab docs/ci.md "Execution environments". The slim runner
+      # image also lacks xz (the Nix installer needs it to unpack its tarball).
+      - name: Install xz (missing from the ARC runner image)
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq xz-utils
+
+      - name: Install Nix (single-user)
+        uses: cachix/install-nix-action@v31
+        with:
+          install_options: --no-daemon
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      - name: Install devbox (reuse the single-user Nix above)
+        uses: jetify-com/devbox-install-action@v0.13.0
+        with:
+          skip-nix-installation: "true"
+
+      - name: Validate (devbox run ci)
+        run: devbox run ci
+
+      - name: Secret scan (devbox run scan-secrets)
+        run: devbox run scan-secrets

@@ -1,0 +1,86 @@
+# App-owned Garage resources for snore-recorder — reconciled in-cluster by Crossplane
+# provider-terraform (homelab ADR-075 steady state), replacing the old app-repo `tofu`.
+# ArgoCD applies this Workspace (homelab repo references it); provider-terraform runs the
+# inline module against the platform's Garage admin API (creds injected platform-side, so
+# nothing sensitive lives here). Outputs (the write-only key) land in the connection
+# Secret; a PushSecret/sync publishes them to Infisical as the source of truth.
+#
+# Ownership (ADR-074): this app owns `sleep-snore` (the bedside Pi writes nightly metrics
+# JSON via boto3 — write-only) and grants the sleep-tracking ingester read on it.
+apiVersion: tf.upbound.io/v1beta1
+kind: Workspace
+metadata:
+  name: snore-recorder-garage
+spec:
+  providerConfigRef:
+    name: default
+  forProvider:
+    source: Inline
+    vars:
+      # sleep-tracking's read-only ingester key id — not a secret (like a username); the
+      # bucket owner (this repo) grants it read. Update if sleep-tracking rotates it.
+      - key: ingester_access_key_id
+        value: "GK9c19b381eb33d878ffa7adcf"
+      # homelab Infisical project id — where the write key is published (workspace_id).
+      - key: infisical_project_id
+        value: "8cf9ec95-d357-4fc4-95ac-7185cb22736c"
+    module: |
+      variable "ingester_access_key_id" { type = string }
+      variable "infisical_project_id" { type = string }
+
+      resource "garage_bucket" "sleep_snore" {
+        global_alias = "sleep-snore"
+      }
+
+      # Write-only key for the bedside device (boto3 put_object only — no listing).
+      resource "garage_key" "snore_writer" {
+        name = "sleep-snore-writer"
+      }
+
+      resource "garage_bucket_permission" "writer" {
+        bucket_id     = garage_bucket.sleep_snore.id
+        access_key_id = garage_key.snore_writer.id
+        read          = false
+        write         = true
+        owner         = false
+      }
+
+      # Cross-app grant: sleep-tracking's ingester reads this bucket.
+      resource "garage_bucket_permission" "ingester_read" {
+        bucket_id     = garage_bucket.sleep_snore.id
+        access_key_id = var.ingester_access_key_id
+        read          = true
+        write         = false
+        owner         = false
+      }
+
+      # Publish the write key to Infisical (source of truth) so the device sources it from
+      # there. Replaces the manual `devbox run infisical-secret` step — fully GitOps now.
+      resource "infisical_secret" "snore_akid" {
+        name         = "SNORE_S3_ACCESS_KEY_ID"
+        value        = garage_key.snore_writer.id
+        env_slug     = "prod"
+        workspace_id = var.infisical_project_id
+        folder_path  = "/"
+      }
+      resource "infisical_secret" "snore_sk" {
+        name         = "SNORE_S3_SECRET_KEY"
+        value        = garage_key.snore_writer.secret_access_key
+        env_slug     = "prod"
+        workspace_id = var.infisical_project_id
+        folder_path  = "/"
+      }
+
+      output "bucket_id" {
+        value = garage_bucket.sleep_snore.id
+      }
+      output "snore_s3_access_key_id" {
+        value = garage_key.snore_writer.id
+      }
+      output "snore_s3_secret_key" {
+        value     = garage_key.snore_writer.secret_access_key
+        sensitive = true
+      }
+  writeConnectionSecretToRef:
+    namespace: snore-recorder
+    name: snore-recorder-garage-conn

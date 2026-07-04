@@ -1,0 +1,36 @@
+# The sleep-ingester CronJob — GitOps-managed. Multi-source: the Helm CHART comes from ghcr as an
+# OCI artifact (published by the sleep-tracking release workflow on a v* tag), the VALUES live in
+# THIS repo (sleep-iac, values/sleep-ingester.yaml). Wave 1: after sleep-tracking (wave 0) creates
+# the Garage keys + the sleep-ingester-credentials / sleep-ingester-registry secrets the chart needs.
+# **A deploy = bump `targetRevision` + the values `image.tag` here** (kept in lockstep; Renovate FU-014).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: sleep-ingester
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: sleep
+  sources:
+    # 1) the chart from ghcr as an OCI artifact. chart version == appVersion == git tag. Bump
+    #    targetRevision per release. The package is public, so no repo credential is needed.
+    - repoURL: ghcr.io/teststuffstash/charts
+      chart: sleep-ingester
+      targetRevision: 0.2.0
+      helm:
+        valueFiles:
+          - $values/values/sleep-ingester.yaml
+    # 2) THIS repo (sleep-iac), referenced as $values — supplies the values file above.
+    - repoURL: https://github.com/teststuffstash/sleep-iac.git
+      targetRevision: master
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: sleep-tracking
+  # namespace is platform-precreated (CreateNamespace omitted → false).
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    retry:
+      limit: 10
+      backoff: { duration: 15s, factor: 2, maxDuration: 5m }
