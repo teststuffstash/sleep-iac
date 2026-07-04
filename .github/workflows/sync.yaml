@@ -16,6 +16,13 @@ name: sync
 on:
   push:
     branches: [master]
+    # only nudge when something ArgoCD actually reconciles changed — not docs/CI/tooling. Covers the
+    # child apps (apps/), the ingester values, and both stacks' CR dirs (kustomize/Workspaces/ESO).
+    paths:
+      - "apps/**"
+      - "values/**"
+      - "sleep-tracking/**"
+      - "snore-recorder/**"
   workflow_dispatch: {}
 
 jobs:
