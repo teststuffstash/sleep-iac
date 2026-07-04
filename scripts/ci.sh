@@ -28,8 +28,14 @@ if [ "$PIN" != "$IMG" ]; then
 fi
 
 echo "==> helm template (pinned ingester chart + values) | kubeconform"
-helm template sleep-ingester "oci://ghcr.io/teststuffstash/charts/sleep-ingester" \
-  --version "$PIN" -f values/sleep-ingester.yaml \
+# Pull the OCI chart FIRST (into a temp dir) so helm's registry "Pulled:/Digest:" chatter — which
+# some helm versions emit to stdout — never contaminates the template output the pipe validates
+# (an unparseable "missing kind" doc). `helm template` of the local tarball is then clean stdout.
+CHART_DIR=$(mktemp -d)
+trap 'rm -rf "$CHART_DIR"' EXIT
+helm pull "oci://ghcr.io/teststuffstash/charts/sleep-ingester" --version "$PIN" \
+  --destination "$CHART_DIR" >/dev/null 2>&1
+helm template sleep-ingester "$CHART_DIR"/sleep-ingester-*.tgz -f values/sleep-ingester.yaml \
   | kubeconform -summary -strict -ignore-missing-schemas -
 
 echo "✓ sleep-iac validation passed"
