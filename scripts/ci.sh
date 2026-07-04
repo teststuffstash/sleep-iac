@@ -23,15 +23,11 @@ echo "==> kustomize build sleep-tracking | kubeconform"
 # ConfigMap, so a bare .json never reaches ArgoCD as a manifest). Build it, then validate the output.
 kustomize build sleep-tracking | kubeconform -summary -strict -ignore-missing-schemas -
 
-# --- the version pins are the whole point of this repo: assert chart == image tag, then prove the
-#     pinned chart actually renders with our values. ---
+# --- the version pin is the whole point of this repo: prove the pinned chart actually renders with
+#     our values. The image tag is NOT set here (it defaults to the chart appVersion), so there's no
+#     chart==tag check anymore — a deploy bumps ONLY the chart targetRevision. ---
 PIN=$(awk '/targetRevision:/{print $2; exit}' apps/sleep-ingester.yaml)
-IMG=$(awk '/^[[:space:]]+tag:/{gsub(/"/,"",$2); print $2; exit}' values/sleep-ingester.yaml)
-echo "==> version pins: chart targetRevision=$PIN, image.tag=$IMG"
-if [ "$PIN" != "$IMG" ]; then
-  echo "✗ chart targetRevision ($PIN) != image.tag ($IMG) — they move together; bump both" >&2
-  exit 1
-fi
+echo "==> pinned chart version: $PIN"
 
 echo "==> helm template (pinned ingester chart + values) | kubeconform"
 # Pull the OCI chart FIRST (into a temp dir) so helm's registry "Pulled:/Digest:" chatter — which

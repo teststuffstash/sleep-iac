@@ -3,19 +3,5 @@
   "extends": ["config:recommended", ":dependencyDashboard"],
   "labels": ["dependencies"],
   "rebaseWhen": "auto",
-  "argocd": {
-    "managerFilePatterns": ["/^apps/.+\\.ya?ml$/"]
-  },
-  "helm-values": {
-    "managerFilePatterns": ["/^values/.+\\.ya?ml$/"]
-  },
-  "packageRules": [
-    {
-      "description": "sleep-ingester release: the OCI chart targetRevision (apps/, argocd manager) and the image.tag (values/, helm-values manager) move in lockstep, so group them into ONE version-bump PR. That PR *is* a deploy — manual review, gated by CI (chart==tag + render) + the reviewer/auto-merge path. FU-014.",
-      "matchManagers": ["argocd", "helm-values"],
-      "groupName": "sleep-ingester release",
-      "automerge": false,
-      "reviewers": ["sootrasmus"]
-    }
-  ]
+  "description": "Renovate here is for THIS repo's own dependencies only (GitHub Actions in .github/workflows, devbox tools). It does NOT bump the sleep-ingester chart/image pins — those are driven by the sleep-tracking `deploy` workflow's version-bump PR (homelab docs/sleep-iac.md §Deploy pipeline), keyed on git sha, which Renovate can't order."
 }

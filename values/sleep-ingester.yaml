@@ -1,16 +1,14 @@
 # Helm values for the sleep-ingester chart — the deploy config for the sleep stack. Consumed by
-# apps/sleep-ingester.yaml via $values. The chart itself (templates) is published to ghcr from the
-# sleep-tracking repo. Keep image.tag in lockstep with the chart targetRevision in that Application.
-
-image:
-  # ghcr.io (PRIVATE package → needs the pull secret below). Canonical registry: CI in the
-  # sleep-tracking repo (.github/workflows/build-image.yaml) builds + pushes here.
-  repository: ghcr.io/teststuffstash/sleep-ingester
-  tag: "0.2.0" # release v0.2.0 (chart + image move together; bump per release)
-  pullPolicy: IfNotPresent
+# apps/sleep-ingester.yaml via $values.
+#
+# NOTE: this file sets NO `image:` block on purpose. The image REPOSITORY + PULLPOLICY are chart
+# defaults, and the image TAG defaults to the chart appVersion (chart/templates/cronjob.yaml). So the
+# deployed image is fully determined by the pinned chart version (apps/sleep-ingester.yaml
+# targetRevision) — a deploy bumps ONE number and image versioning never leaks into IaC. See homelab
+# docs/sleep-iac.md §"Deploy pipeline". This file only carries how the CronJob runs in this cluster.
 
 # ESO-managed dockerconfigjson (sleep-tracking/externalsecret.yaml: sleep-ingester-registry,
-# from Infisical SLEEP_GHCR_PULL_TOKEN).
+# from Infisical SLEEP_GHCR_PULL_TOKEN). The ghcr package is private, so the pull secret stays.
 imagePullSecrets:
   - name: sleep-ingester-registry
 

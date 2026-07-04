@@ -1,8 +1,13 @@
 # The sleep-ingester CronJob — GitOps-managed. Multi-source: the Helm CHART comes from ghcr as an
-# OCI artifact (published by the sleep-tracking release workflow on a v* tag), the VALUES live in
-# THIS repo (sleep-iac, values/sleep-ingester.yaml). Wave 1: after sleep-tracking (wave 0) creates
-# the Garage keys + the sleep-ingester-credentials / sleep-ingester-registry secrets the chart needs.
-# **A deploy = bump `targetRevision` + the values `image.tag` here** (kept in lockstep; Renovate FU-014).
+# OCI artifact, the VALUES live in THIS repo (sleep-iac, values/sleep-ingester.yaml). Wave 1: after
+# sleep-tracking (wave 0) creates the Garage keys + the sleep-ingester-credentials /
+# sleep-ingester-registry secrets the chart needs.
+#
+# **A deploy = bump `targetRevision` below — the ONLY knob.** The image tag defaults to the chart
+# appVersion (the chart is published version == appVersion == image tag), so IaC never sets an image
+# version. The sleep-tracking `deploy` workflow builds the chart+image on an app-relevant master push
+# and opens the bump PR here automatically (homelab docs/sleep-iac.md §"Deploy pipeline"). The version
+# is CalVer + git sha, e.g. `2026.7.4-g<sha>`; bump this in place to roll back/forward.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
