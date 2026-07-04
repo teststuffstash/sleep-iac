@@ -1,0 +1,25 @@
+# sleep-tracking — kustomize so the Grafana dashboard body can live as an editable, standalone JSON
+# (configMapGenerator --from-file) instead of an inlined YAML string. The three infra CRs are plain
+# resources; the dashboard becomes a ConfigMap the Grafana sidecar auto-discovers by label. agent/
+# is intentionally NOT listed (kubectl-applied at bootstrap, not part of the ArgoCD sync).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - garage-workspace.yaml
+  - externalsecret.yaml
+  - openrouter-key.yaml
+
+# Sleep Overview dashboard (FU-025: moved out of tofu/monitoring.tf). The Grafana sidecar discovers
+# dashboard ConfigMaps labelled `grafana_dashboard` across ALL namespaces, so it lands here in
+# sleep-tracking (not monitoring) and a fix becomes a PR ArgoCD syncs — no `tofu apply`. The dashboard
+# binds to datasource uid `sleep-notes` (the frser SQLite datasource, still platform-owned in the
+# Grafana Helm release) — that uid is the stable contract; don't let it drift.
+configMapGenerator:
+  - name: grafana-dashboard-sleep-overview
+    files:
+      - sleep-overview.json
+    options:
+      labels:
+        grafana_dashboard: "1"
+      disableNameSuffixHash: true # stable CM name (sidecar keys on the label + the dashboard uid)

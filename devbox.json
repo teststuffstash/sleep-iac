@@ -4,6 +4,7 @@
     "yamllint@latest",
     "kubeconform@latest",
     "kubernetes-helm@latest",
+    "kustomize@latest",
     "gitleaks@latest"
   ],
   "shell": {

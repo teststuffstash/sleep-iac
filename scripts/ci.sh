@@ -11,11 +11,17 @@ DIRS="apps values sleep-tracking snore-recorder"
 echo "==> yamllint"
 yamllint $DIRS
 
-echo "==> kubeconform (manifests; CRDs → ignore-missing-schemas)"
+echo "==> kubeconform (raw manifests; CRDs → ignore-missing-schemas)"
 # The infra CRs are CRDs (Workspace, ExternalSecret, OpenRouterKey, GithubAccessToken) + ArgoCD
 # Applications — kubeconform has no schema for those, so -ignore-missing-schemas skips them and
-# still hard-validates the core kinds (Job, PVC, ConfigMap). agent/ is validated too.
-kubeconform -summary -strict -ignore-missing-schemas apps sleep-tracking snore-recorder
+# still hard-validates the core kinds (Job, PVC, ConfigMap). sleep-tracking/ is kustomize (built
+# below); its agent/ dir (kubectl-applied, not in the kustomization) is validated here directly.
+kubeconform -summary -strict -ignore-missing-schemas apps snore-recorder sleep-tracking/agent
+
+echo "==> kustomize build sleep-tracking | kubeconform"
+# sleep-tracking renders via kustomize (configMapGenerator embeds the raw dashboard JSON into a
+# ConfigMap, so a bare .json never reaches ArgoCD as a manifest). Build it, then validate the output.
+kustomize build sleep-tracking | kubeconform -summary -strict -ignore-missing-schemas -
 
 # --- the version pins are the whole point of this repo: assert chart == image tag, then prove the
 #     pinned chart actually renders with our values. ---

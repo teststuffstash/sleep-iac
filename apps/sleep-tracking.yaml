@@ -4,7 +4,8 @@
 # (sleep-iac), path sleep-tracking/ — the CRs used to live in the sleep-tracking repo's infra/.
 # Part of the **sleep** app-of-apps; project: sleep (tenancy boundary). Depends on platform being
 # up (ESO operator + ClusterSecretStore + Crossplane provider-terraform) — ArgoCD retries until
-# those exist. recurse:false → the top-level CRs sync; agent/ (kubectl-applied) is excluded.
+# those exist. The path has a kustomization.yaml → ArgoCD renders it with kustomize: the three infra
+# CRs + the Grafana dashboard ConfigMap (configMapGenerator). agent/ is excluded (not a resource).
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -18,7 +19,6 @@ spec:
     repoURL: https://github.com/teststuffstash/sleep-iac.git
     targetRevision: master
     path: sleep-tracking
-    directory: { recurse: false }
   destination:
     server: https://kubernetes.default.svc
     namespace: sleep-tracking
