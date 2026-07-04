@@ -4,13 +4,16 @@
 #
 # Runs on the homelab self-hosted runner (Actions Runner Controller, ephemeral laptop tier):
 # runs-on: homelab-ephemeral.
+#
+# pull_request ONLY (no push:master): the PR run is the gate that blocks a bad manifest from merging;
+# re-running on master after a squash-merge would validate byte-identical content and gate nothing
+# (ArgoCD would surface a bad manifest as a sync error anyway). See docs/sleep-iac.md.
 name: CI
 
 on:
-  push:
-    branches: [master]
   pull_request:
     branches: [master]
+  workflow_dispatch: {}
 
 jobs:
   ci:
