@@ -1,0 +1,41 @@
+# sync.yaml — nudge ArgoCD to sync INSTANTLY on a sleep-iac master change, instead of waiting for the
+# reconciliation poll (timeout.reconciliation 120s + up to 60s jitter ≈ 3 min worst case).
+#
+# This is ArgoCD's native git webhook (https://argo-cd.readthedocs.io/en/stable/operator-manual/webhook/),
+# but delivered from the IN-CLUSTER runner instead of from GitHub — so argocd-server stays LAN-only
+# (ClusterIP) and GitHub never has to reach it. We POST a GitHub-style `push` event to /api/webhook;
+# ArgoCD refreshes every Application whose source repo is this one (the root `sleep` app + all three
+# children reference sleep-iac), which pulls the just-merged deploy pin immediately.
+#
+# UNSIGNED on purpose: the endpoint is in-cluster only and a webhook can at most trigger a REFRESH
+# (re-sync to git state — idempotent, no spec change), so the value of an HMAC secret here is ~nil and
+# it would cost a shared secret across two tofu roots. If /api/webhook is ever exposed publicly, add
+# `webhook.github.secret` to argocd-secret + sign the payload (X-Hub-Signature-256) before trusting it.
+name: sync
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch: {}
+
+jobs:
+  argocd-refresh:
+    runs-on: homelab-ephemeral
+    steps:
+      - name: Nudge ArgoCD to sync (native webhook, in-cluster)
+        env:
+          ARGOCD_WEBHOOK: http://argocd-server.argocd.svc/api/webhook
+          SHA: ${{ github.sha }}
+          REPO: ${{ github.repository }}
+        run: |
+          payload=$(printf '{"ref":"refs/heads/master","after":"%s","repository":{"html_url":"https://github.com/%s","default_branch":"master"}}' "$SHA" "$REPO")
+          code=$(curl -sS -m 15 -o /tmp/resp -w '%{http_code}' \
+            -X POST "$ARGOCD_WEBHOOK" \
+            -H 'Content-Type: application/json' \
+            -H 'X-GitHub-Event: push' \
+            --data "$payload")
+          echo "POST $ARGOCD_WEBHOOK -> HTTP $code"; cat /tmp/resp 2>/dev/null; echo
+          case "$code" in
+            200) echo "✓ ArgoCD accepted the push event — sleep apps refreshed" ;;
+            *)   echo "::error::ArgoCD webhook POST failed (HTTP $code) — reachability (arc-runners→argocd) or endpoint?"; exit 1 ;;
+          esac
