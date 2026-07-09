@@ -50,7 +50,10 @@ spec:
   permissions:                     # narrower than the App's grant (defense in depth)
     contents: write
     pull_requests: write
-    issues: read                   # the fixer recipe MUST `gh issue view <n>` first; 404s without this
+    issues: write                  # read: the fixer recipe MUST `gh issue view <n>` first (404s without).
+      # write (2026-07-09, homelab FU-064/FU-043): agent-finalize posts AGENT_STRIKE / stats comments
+      # IN-POD — the dispatcher may exit right after dispatch, so pod-side is the only reliable owner.
+      # Subset of the App-level grant (already carries issues:write for the coordinator token).
   repositories:
     - sleep-tracking               # this token can ONLY touch this repo
 ---
