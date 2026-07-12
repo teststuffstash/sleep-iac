@@ -1,14 +1,15 @@
 # sleep-tracking — kustomize so the Grafana dashboard body can live as an editable, standalone JSON
-# (configMapGenerator --from-file) instead of an inlined YAML string. The three infra CRs are plain
+# (configMapGenerator --from-file) instead of an inlined YAML string. The infra CRs are plain
 # resources; the dashboard becomes a ConfigMap the Grafana sidecar auto-discovers by label. agent/
-# is intentionally NOT listed (kubectl-applied at bootstrap, not part of the ArgoCD sync).
+# is NOT listed here — the agent-fixer ApplicationSet (homelab) syncs it as its own Application.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
   - garage-workspace.yaml
   - externalsecret.yaml
-  - openrouter-key.yaml
+  # openrouter-key.yaml removed 2026-07-12: the standing budget key is rendered by the sleep
+  # AgentStack claim (agent/agentstack.yaml, homelab FU-048) — one-time key re-mint expected.
 
 # Sleep Overview dashboard (FU-025: moved out of tofu/monitoring.tf). The Grafana sidecar discovers
 # dashboard ConfigMaps labelled `grafana_dashboard` across ALL namespaces, so it lands here in

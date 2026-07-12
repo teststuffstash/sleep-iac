@@ -1,0 +1,28 @@
+# The sleep stack's AgentStack claim (homelab FU-048/ADR-085) — the stack's agent POLICY in one CR;
+# homelab's XRD+Composition render the fixer MECHANISM that git-token.yaml (this dir) and
+# ../openrouter-key.yaml carried by hand. uv-cache.yaml + job-validate.yaml stay: they are not
+# claim-rendered (shared wheel cache / historical bootstrap validation). Docs:
+#   kubectl get cm -n crossplane-system agentstack-docs -o jsonpath='{.data.USAGE\.md}'
+#   homelab docs/agents/agentstack.md
+apiVersion: platform.teststuff.net/v1alpha1
+kind: AgentStack
+metadata:
+  name: sleep
+spec:
+  mainRepo: homelab # sleep's coordination knowledge still lives in homelab docs
+  coordinatorModel: sonnet
+  workerModel: openrouter/deepseek/deepseek-v4-flash
+  workerModelFallbacks: [tencent/hy3, qwen/qwen3-coder]
+  repos:
+    - name: sleep-iac # context-only: CI deploys this repo, agents never run pods in it (FU-052 exclusion)
+    - name: snore-recorder # context-only: merge-path only; its ansible→Pi deploy is manual, no worker ns
+    - name: sleep-tracking
+      fixer:
+        budgetUSD: 5 # USD/week standing ceiling (carried over)
+        resetInterval: weekly
+        guardrail: only-free
+        egress:
+          profile: python # uv sync: pypi.org + files.pythonhosted.org on top of the baseline
+          # MONITOR (FU-020 rollout ring 1): allowlist + DNS visibility attach, nothing blocked.
+          # Harvest Hubble flows over ~3 real rides, then flip to true in a one-line PR here.
+          enforce: false
