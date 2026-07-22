@@ -26,13 +26,13 @@
       },
       "targets": [
         {
-          "queryText": "SELECT night_date, deep_min AS deep, light_min AS light, rem_min AS rem, awake_min AS awake FROM sleep_nights ORDER BY night_date",
+          "queryText": "SELECT night_date, ROUND(deep_min / 60.0, 2) AS deep, ROUND(light_min / 60.0, 2) AS light, ROUND(rem_min / 60.0, 2) AS rem, ROUND(awake_min / 60.0, 2) AS awake FROM sleep_nights ORDER BY night_date",
           "datasource": {
             "type": "frser-sqlite-datasource",
             "uid": "sleep-notes"
           },
           "queryType": "table",
-          "rawQueryText": "SELECT night_date, deep_min AS deep, light_min AS light, rem_min AS rem, awake_min AS awake FROM sleep_nights ORDER BY night_date"
+          "rawQueryText": "SELECT night_date, ROUND(deep_min / 60.0, 2) AS deep, ROUND(light_min / 60.0, 2) AS light, ROUND(rem_min / 60.0, 2) AS rem, ROUND(awake_min / 60.0, 2) AS awake FROM sleep_nights ORDER BY night_date"
         }
       ],
       "fieldConfig": {
@@ -42,7 +42,7 @@
               "mode": "normal"
             }
           },
-          "unit": "short",
+          "unit": "h",
           "min": 0
         },
         "overrides": [
@@ -103,7 +103,7 @@
       }
     },
     {
-      "title": "Total Sleep (min)",
+      "title": "Total Sleep (h)",
       "type": "timeseries",
       "gridPos": {
         "h": 10,
@@ -117,7 +117,7 @@
       },
       "targets": [
         {
-          "queryText": "SELECT CAST(strftime('%s', night_date) AS INTEGER) AS time, total_sleep_min AS value FROM sleep_nights ORDER BY night_date",
+          "queryText": "SELECT CAST(strftime('%s', night_date) AS INTEGER) AS time, ROUND((total_sleep_min - COALESCE(nap_min, 0)) / 60.0, 2) AS \"Night sleep\", ROUND(COALESCE(nap_min, 0) / 60.0, 2) AS \"Naps\" FROM sleep_nights ORDER BY night_date",
           "datasource": {
             "type": "frser-sqlite-datasource",
             "uid": "sleep-notes"
@@ -126,38 +126,54 @@
           "timeColumns": [
             "time"
           ],
-          "rawQueryText": "SELECT CAST(strftime('%s', night_date) AS INTEGER) AS time, total_sleep_min AS value FROM sleep_nights ORDER BY night_date"
+          "rawQueryText": "SELECT CAST(strftime('%s', night_date) AS INTEGER) AS time, ROUND((total_sleep_min - COALESCE(nap_min, 0)) / 60.0, 2) AS \"Night sleep\", ROUND(COALESCE(nap_min, 0) / 60.0, 2) AS \"Naps\" FROM sleep_nights ORDER BY night_date"
         }
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "short",
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
+          "unit": "h",
+          "min": 0
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Night sleep"
+            },
+            "properties": [
               {
-                "color": "red",
-                "value": null
-              },
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#5794F2"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Naps"
+            },
+            "properties": [
               {
-                "color": "orange",
-                "value": 300
-              },
-              {
-                "color": "green",
-                "value": 420
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF9830"
+                }
               }
             ]
           }
-        }
+        ]
       },
       "options": {
         "legend": {
-          "showLegend": false
+          "showLegend": true,
+          "placement": "bottom"
         },
         "tooltip": {
-          "mode": "single"
+          "mode": "multi"
         }
       }
     },

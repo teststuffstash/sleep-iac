@@ -1,5 +1,5 @@
 # App-owned Garage resources for snore-recorder — reconciled in-cluster by Crossplane
-# provider-terraform (homelab ADR-075 steady state), replacing the old app-repo `tofu`.
+# provider-terraform (homelab ADR-076, which supersedes ADR-075), replacing the old app-repo `tofu`.
 # ArgoCD applies this Workspace (homelab repo references it); provider-terraform runs the
 # inline module against the platform's Garage admin API (creds injected platform-side, so
 # nothing sensitive lives here). Outputs (the write-only key) land in the connection
@@ -30,6 +30,7 @@ spec:
 
       resource "garage_bucket" "sleep_snore" {
         global_alias = "sleep-snore"
+        max_size     = 5368709120  # 5Gi — ADR-089 quota-as-contract: nightly JSON + a few short loud clips
       }
 
       # Write-only key for the bedside device (boto3 put_object only — no listing).

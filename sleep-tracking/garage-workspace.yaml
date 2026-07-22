@@ -54,9 +54,16 @@ spec:
         id = "f04a5834ec00217460386bbe5ecd3872c1c57e2b7d6400291d9ddfd4411e4223/GK5294703bc0b26aa86e2fbbd2"
       }
 
-      # --- the resources (must match the live config so import is a no-op diff) ---
-      resource "garage_bucket" "sleep_band" { global_alias = "sleep-band" }
-      resource "garage_bucket" "sleep_db"   { global_alias = "sleep-db" }
+      # --- the resources (structure matches live config so import adopts cleanly; the
+      # max_size below is a deliberate one-time quota SET on the adopted buckets — ADR-089) ---
+      resource "garage_bucket" "sleep_band" {
+        global_alias = "sleep-band"
+        max_size     = 5368709120  # 5Gi — ADR-089 quota-as-contract: cap on phone Gadgetbridge exports
+      }
+      resource "garage_bucket" "sleep_db" {
+        global_alias = "sleep-db"
+        max_size     = 2147483648  # 2Gi — ADR-089 quota-as-contract: the SQLite store is a single small file
+      }
 
       resource "garage_key" "band_writer" { name = "sleep-band-writer" }  # phone (FolderSync): rw on sleep-band
       resource "garage_key" "ingester"    { name = "sleep-ingester" }     # CronJob: read sleep-band (+ sleep-snore, granted by snore-recorder)
