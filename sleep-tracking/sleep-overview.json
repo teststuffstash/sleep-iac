@@ -1,7 +1,7 @@
 {
   "title": "Sleep Overview",
   "uid": "sleep-overview",
-  "description": "Nightly sleep tracking overview \u2014 stages, HR, snore",
+  "description": "Nightly sleep tracking overview — stages, HR, snore",
   "tags": [
     "sleep-tracking",
     "health"
@@ -43,7 +43,10 @@
             }
           },
           "unit": "h",
-          "min": 0
+          "min": 0,
+          "color": {
+            "mode": "fixed"
+          }
         },
         "overrides": [
           {
@@ -54,7 +57,10 @@
             "properties": [
               {
                 "id": "color",
-                "value": "#73BF69"
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#1F60C4"
+                }
               }
             ]
           },
@@ -66,7 +72,10 @@
             "properties": [
               {
                 "id": "color",
-                "value": "#5794F2"
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#3FA7F0"
+                }
               }
             ]
           },
@@ -78,7 +87,10 @@
             "properties": [
               {
                 "id": "color",
-                "value": "#FF9830"
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#E0459B"
+                }
               }
             ]
           },
@@ -90,7 +102,10 @@
             "properties": [
               {
                 "id": "color",
-                "value": "#F2495C"
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#FF9830"
+                }
               }
             ]
           }
@@ -99,7 +114,12 @@
       "options": {
         "orientation": "auto",
         "groupWidth": 0.7,
-        "showValue": "never"
+        "showValue": "never",
+        "legend": {
+          "showLegend": true,
+          "placement": "bottom",
+          "displayMode": "list"
+        }
       }
     },
     {
@@ -265,7 +285,7 @@
     },
     {
       "title": "Snore vs HR (correlation)",
-      "type": "scatter",
+      "type": "xychart",
       "gridPos": {
         "h": 10,
         "w": 12,
@@ -278,62 +298,86 @@
       },
       "targets": [
         {
-          "queryText": "SELECT snore_score AS x, hr_avg AS y, night_date FROM sleep_nights WHERE snore_score IS NOT NULL ORDER BY night_date",
+          "queryText": "SELECT snore_score AS \"Snore score\", hr_avg AS \"Overnight HR\", night_date FROM sleep_nights WHERE snore_score IS NOT NULL AND hr_avg IS NOT NULL ORDER BY snore_score",
           "datasource": {
             "type": "frser-sqlite-datasource",
             "uid": "sleep-notes"
           },
           "queryType": "table",
-          "rawQueryText": "SELECT snore_score AS x, hr_avg AS y, night_date FROM sleep_nights WHERE snore_score IS NOT NULL ORDER BY night_date"
+          "rawQueryText": "SELECT snore_score AS \"Snore score\", hr_avg AS \"Overnight HR\", night_date FROM sleep_nights WHERE snore_score IS NOT NULL AND hr_avg IS NOT NULL ORDER BY snore_score"
         }
       ],
+      "options": {
+        "mapping": "auto",
+        "seriesMapping": "auto",
+        "legend": {
+          "showLegend": false,
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
       "fieldConfig": {
         "defaults": {
           "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "points",
-            "fillOpacity": 80,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
+            "show": "points",
+            "pointSize": {
+              "fixed": 9
             },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 8,
+            "pointShape": "circle",
+            "pointStrokeWidth": 1,
+            "fillOpacity": 60,
+            "axisPlacement": "auto",
+            "axisLabel": "",
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "always",
-            "spanNulls": false,
-            "stacking": {
-              "mode": "none",
-              "group": "A"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
             }
           }
-        }
-      },
-      "options": {
-        "legend": {
-          "showLegend": true,
-          "placement": "bottom"
         },
-        "tooltip": {
-          "mode": "multi"
-        }
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Snore score"
+            },
+            "properties": [
+              {
+                "id": "custom.axisLabel",
+                "value": "Snore score"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Overnight HR"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bpm"
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "Overnight HR (bpm)"
+              }
+            ]
+          }
+        ]
       }
     },
     {
       "title": "Snore vs Sleep Duration (correlation)",
-      "type": "scatter",
+      "type": "xychart",
       "gridPos": {
         "h": 10,
         "w": 12,
@@ -346,31 +390,121 @@
       },
       "targets": [
         {
-          "queryText": "SELECT snore_score AS x, total_sleep_min AS y, night_date FROM sleep_nights WHERE snore_score IS NOT NULL ORDER BY night_date",
+          "queryText": "SELECT snore_score AS \"Snore score\", ROUND(total_sleep_min / 60.0, 2) AS \"Total sleep\", night_date FROM sleep_nights WHERE snore_score IS NOT NULL AND total_sleep_min IS NOT NULL ORDER BY snore_score",
           "datasource": {
             "type": "frser-sqlite-datasource",
             "uid": "sleep-notes"
           },
           "queryType": "table",
-          "rawQueryText": "SELECT snore_score AS x, total_sleep_min AS y, night_date FROM sleep_nights WHERE snore_score IS NOT NULL ORDER BY night_date"
+          "rawQueryText": "SELECT snore_score AS \"Snore score\", ROUND(total_sleep_min / 60.0, 2) AS \"Total sleep\", night_date FROM sleep_nights WHERE snore_score IS NOT NULL AND total_sleep_min IS NOT NULL ORDER BY snore_score"
+        }
+      ],
+      "options": {
+        "mapping": "auto",
+        "seriesMapping": "auto",
+        "legend": {
+          "showLegend": false,
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "show": "points",
+            "pointSize": {
+              "fixed": 9
+            },
+            "pointShape": "circle",
+            "pointStrokeWidth": 1,
+            "fillOpacity": 60,
+            "axisPlacement": "auto",
+            "axisLabel": "",
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Snore score"
+            },
+            "properties": [
+              {
+                "id": "custom.axisLabel",
+                "value": "Snore score"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Total sleep"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "h"
+              },
+              {
+                "id": "custom.axisLabel",
+                "value": "Total sleep (h)"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "title": "Bed → Wake times (per night, local)",
+      "type": "table",
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 30
+      },
+      "datasource": {
+        "type": "frser-sqlite-datasource",
+        "uid": "sleep-notes"
+      },
+      "targets": [
+        {
+          "queryText": "SELECT night_date AS \"Night\", strftime('%H:%M', sleep_start, '+3 hours') AS \"Bed\", strftime('%H:%M', wake_time, '+3 hours') AS \"Wake\", printf('%d:%02d', total_sleep_min / 60, total_sleep_min % 60) AS \"Total\", printf('%d:%02d', COALESCE(nap_min, 0) / 60, COALESCE(nap_min, 0) % 60) AS \"Naps\", hr_avg AS \"Avg HR\", snore_score AS \"Snore score\" FROM sleep_nights ORDER BY night_date DESC",
+          "datasource": {
+            "type": "frser-sqlite-datasource",
+            "uid": "sleep-notes"
+          },
+          "queryType": "table",
+          "rawQueryText": "SELECT night_date AS \"Night\", strftime('%H:%M', sleep_start, '+3 hours') AS \"Bed\", strftime('%H:%M', wake_time, '+3 hours') AS \"Wake\", printf('%d:%02d', total_sleep_min / 60, total_sleep_min % 60) AS \"Total\", printf('%d:%02d', COALESCE(nap_min, 0) / 60, COALESCE(nap_min, 0) % 60) AS \"Naps\", hr_avg AS \"Avg HR\", snore_score AS \"Snore score\" FROM sleep_nights ORDER BY night_date DESC"
         }
       ],
       "fieldConfig": {
         "defaults": {
           "custom": {
-            "drawStyle": "points",
-            "pointSize": 8,
-            "showPoints": "always"
+            "align": "auto",
+            "filterable": true
           }
-        }
+        },
+        "overrides": []
       },
       "options": {
-        "legend": {
-          "showLegend": true,
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "multi"
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
         }
       }
     }
