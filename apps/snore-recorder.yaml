@@ -15,8 +15,7 @@ spec:
   source:
     repoURL: https://github.com/teststuffstash/sleep-iac.git
     targetRevision: master
-    path: snore-recorder
-    directory: { recurse: false }
+    path: snore-recorder   # kustomize (kustomization.yaml): Workspace + ESO + deploy hook/cron + CM
   destination:
     server: https://kubernetes.default.svc
     namespace: snore-recorder

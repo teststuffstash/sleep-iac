@@ -1,0 +1,51 @@
+# Belt for the offline-Pi gap: the PostSync hook only fires on a sync, so a Pi that's off past the
+# sync's retry budget sits red until the next pin change. This CronJob re-runs the SAME idempotent
+# deploy playbook daily (a no-op when nothing changed), converging a Pi that came back online.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: snore-deploy-nightly
+  namespace: snore-recorder
+spec:
+  schedule: "17 12 * * *"        # 15:17 Europe/Tallinn — a daytime hour the Pi is likely up
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      ttlSecondsAfterFinished: 3600
+      template:
+        metadata:
+          labels: { app: snore-deploy }
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          containers:
+            - name: ansible
+              image: alpine/ansible:2.18.1  # renovate: pin digest
+              command: ["/bin/sh", "-ceu"]
+              args:
+                - |
+                  for i in $(seq 30); do [ -s /secrets/id_ed25519 ] && break; echo "waiting for deploy key ($i)"; sleep 2; done
+                  cp /secrets/id_ed25519 /tmp/id_ed25519 && chmod 0400 /tmp/id_ed25519
+                  ansible-galaxy collection install ansible.posix >/dev/null 2>&1 || true
+                  cd /config
+                  exec ansible-playbook -i inventory.ini deploy.yml \
+                    --private-key /tmp/id_ed25519 \
+                    -e ansible_ssh_common_args='-o UserKnownHostsFile=/config/known_hosts -o StrictHostKeyChecking=yes'
+              env:
+                - { name: ANSIBLE_HOST_KEY_CHECKING, value: "True" }
+                - { name: DEPLOY_KEY_PATH, value: /tmp/id_ed25519 }
+                - { name: ANSIBLE_STDOUT_CALLBACK, value: default }
+              volumeMounts:
+                - { name: playbook, mountPath: /config, readOnly: true }
+                - { name: ssh, mountPath: /secrets, readOnly: true }
+              resources:
+                requests: { cpu: 50m, memory: 96Mi }
+                limits: { cpu: "1", memory: 256Mi }
+          volumes:
+            - name: playbook
+              configMap: { name: snore-deploy }
+            - name: ssh
+              secret: { secretName: snore-deploy-ssh, defaultMode: 0400 }

@@ -1,0 +1,38 @@
+# snore-recorder deploy unit — Docker first (graduates to Podman + systemd quadlet later).
+# Ansible drops this on the Pi (Raspberry Pi OS Lite) and runs `docker compose up -d`.
+# Image is built off-cluster (arm64) and pulled from ghcr (ghcr.io/teststuffstash/snore-recorder).
+services:
+  snore-recorder:
+    image: ${SNORE_IMAGE:-ghcr.io/teststuffstash/snore-recorder:latest}
+    container_name: snore-recorder
+    restart: unless-stopped
+    # USB microphone (ALSA via PortAudio) + the Jabra Speak 410's HID node (call button
+    # + off-hook LED). The app picks the mic by name substring (SNORE_INPUT_DEVICE);
+    # mounting all of /dev/snd avoids card-index churn on reboot. hidraw0 is the Jabra's
+    # only HID interface on the Pi — override with SNORE_HIDRAW if it ever renumbers.
+    devices:
+      - /dev/snd:/dev/snd
+      - /dev/hidraw0:/dev/hidraw0
+    # Garage S3 creds, provisioned from Infisical to a mode-600 host file. Ansible
+    # ensures this file exists before `up` (compose errors on a missing env_file).
+    env_file:
+      - /var/lib/snore-secrets/s3.env
+    # Button-armed recording: the Jabra call button arms a night (green LED on, recording
+    # starts SNORE_ARM_DELAY_MIN later), a second press marks wake. The window below is the
+    # BACKSTOP — recorded automatically if no button is pressed, so a forgotten press never
+    # loses a night. (--controls null falls back to plain window recording.)
+    command: ["run", "--controls", "jabra"]
+    environment:
+      SNORE_TZ: ${SNORE_TZ:-Europe/Tallinn}
+      SNORE_WINDOW_START: ${SNORE_WINDOW_START:-00:00}
+      SNORE_WINDOW_END: ${SNORE_WINDOW_END:-09:00}
+      SNORE_ARM_DELAY_MIN: ${SNORE_ARM_DELAY_MIN:-20}
+      # Mic name substring (e.g. "Jabra"); empty = default input device.
+      SNORE_INPUT_DEVICE: ${SNORE_INPUT_DEVICE:-Jabra}
+      SNORE_DATA_DIR: /data
+    # Store-and-forward spool: pending nights survive restarts / offline travel.
+    volumes:
+      - snore-data:/data
+
+volumes:
+  snore-data:
