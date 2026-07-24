@@ -137,7 +137,7 @@
       },
       "targets": [
         {
-          "queryText": "SELECT CAST(strftime('%s', night_date) AS INTEGER) AS time, ROUND((total_sleep_min - COALESCE(nap_min, 0)) / 60.0, 2) AS \"Night sleep\", ROUND(COALESCE(nap_min, 0) / 60.0, 2) AS \"Naps\" FROM sleep_nights ORDER BY night_date",
+          "queryText": "SELECT CAST(strftime('%s', night_date) AS INTEGER) AS time, (total_sleep_min - COALESCE(nap_min, 0)) * 60 AS \"Night sleep\", COALESCE(nap_min, 0) * 60 AS \"Naps\" FROM sleep_nights ORDER BY night_date",
           "datasource": {
             "type": "frser-sqlite-datasource",
             "uid": "sleep-notes"
@@ -146,12 +146,12 @@
           "timeColumns": [
             "time"
           ],
-          "rawQueryText": "SELECT CAST(strftime('%s', night_date) AS INTEGER) AS time, ROUND((total_sleep_min - COALESCE(nap_min, 0)) / 60.0, 2) AS \"Night sleep\", ROUND(COALESCE(nap_min, 0) / 60.0, 2) AS \"Naps\" FROM sleep_nights ORDER BY night_date"
+          "rawQueryText": "SELECT CAST(strftime('%s', night_date) AS INTEGER) AS time, (total_sleep_min - COALESCE(nap_min, 0)) * 60 AS \"Night sleep\", COALESCE(nap_min, 0) * 60 AS \"Naps\" FROM sleep_nights ORDER BY night_date"
         }
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "h",
+          "unit": "dtdurations",
           "min": 0
         },
         "overrides": [
