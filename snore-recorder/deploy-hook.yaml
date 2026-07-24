@@ -34,13 +34,16 @@ spec:
               printf '%s\n' "$(cat /secrets/id_ed25519)" > /tmp/id_ed25519 && chmod 0400 /tmp/id_ed25519
               ansible-galaxy collection install ansible.posix >/dev/null 2>&1 || true
               cd /config
-              exec ansible-playbook -i inventory.ini deploy.yml \
-                --private-key /tmp/id_ed25519 \
-                -e ansible_ssh_common_args='-o UserKnownHostsFile=/config/known_hosts -o StrictHostKeyChecking=yes'
+              exec ansible-playbook -i inventory.ini deploy.yml --private-key /tmp/id_ed25519
           env:
             - { name: ANSIBLE_HOST_KEY_CHECKING, value: "True" }
             - { name: DEPLOY_KEY_PATH, value: /tmp/id_ed25519 }
             - { name: ANSIBLE_STDOUT_CALLBACK, value: default }
+            - { name: HOME, value: /tmp }   # writable home for ansible's control path / galaxy
+            # ssh args via env (not -e on the command line — shell/block-scalar quoting mangled the
+            # -o flags). ControlMaster=no → no connection multiplexing / control path for a one-shot.
+            - name: ANSIBLE_SSH_ARGS
+              value: "-o ControlMaster=no -o UserKnownHostsFile=/config/known_hosts -o StrictHostKeyChecking=yes"
           volumeMounts:
             - { name: playbook, mountPath: /config, readOnly: true }
             - { name: ssh, mountPath: /secrets, readOnly: true }
