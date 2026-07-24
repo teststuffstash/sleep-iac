@@ -1,0 +1,52 @@
+---
+# Deploy-only playbook: update an ALREADY-PROVISIONED Pi (Docker + the mode-600
+# /var/lib/snore-secrets/s3.env are placed once at flash time via the snore-recorder repo's
+# provisioning; NOT re-fetched here, so this needs no Infisical — only the SSH key). Run in-cluster
+# by the ArgoCD PostSync hook Job + the nightly CronJob belt. Idempotent; safe to re-run.
+- name: Deploy snore-recorder
+  hosts: snore
+  gather_facts: false
+  vars:
+    snore_dir: /opt/snore-recorder
+    deploy_key: "{{ lookup('ansible.builtin.env', 'DEPLOY_KEY_PATH') | default('/secrets/id_ed25519', true) }}"
+  tasks:
+    - name: App directory exists
+      become: true
+      ansible.builtin.file:
+        path: "{{ snore_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Sync compose.yaml + .env (SNORE_* config + image pin)
+      become: true
+      ansible.builtin.copy:
+        src: "{{ item.src }}"
+        dest: "{{ snore_dir }}/{{ item.dest }}"
+        mode: "0644"
+      loop:
+        - { src: compose.yaml, dest: compose.yaml }
+        - { src: snore.env, dest: .env }
+
+    - name: Self-heal the deploy public key into authorized_keys
+      # Derived from the mounted private key so future runs never depend on a manually-planted
+      # key. (The FIRST run still needs today's access to bootstrap — see the PR notes.)
+      ansible.posix.authorized_key:
+        user: "{{ ansible_user }}"
+        state: present
+        key: "{{ lookup('ansible.builtin.pipe', 'ssh-keygen -y -f ' + deploy_key) }}"
+
+    - name: Pull the pinned image
+      become: true
+      ansible.builtin.command:
+        cmd: docker compose pull
+        chdir: "{{ snore_dir }}"
+      register: pull
+      changed_when: "'Pull complete' in pull.stderr or 'Downloaded newer' in pull.stderr"
+
+    - name: Reconcile the container (recreates on image / compose / .env change)
+      become: true
+      ansible.builtin.command:
+        cmd: docker compose up -d --remove-orphans
+        chdir: "{{ snore_dir }}"
+      register: up
+      changed_when: "'Recreat' in up.stderr or 'Start' in up.stderr or 'Creat' in up.stderr"

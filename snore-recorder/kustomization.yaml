@@ -1,0 +1,29 @@
+# snore-recorder stack resources. Kustomize so the ansible deploy artifacts (playbook + compose +
+# inventory + known_hosts) ride as an editable ConfigMap the deploy Job mounts — not inlined YAML.
+# All kinds here are namespaced (ExternalSecret/Job/CronJob/ConfigMap) except the Crossplane
+# Workspace (the one cluster-scoped kind the `sleep` AppProject whitelists), so it's fully
+# self-service inside the stack — no platform/AppProject change (FU-051).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# No `namespace:` transformer: it would stamp the cluster-scoped Workspace. The namespaced manifests
+# set namespace: snore-recorder themselves; the generated ConfigMap lands there via the ArgoCD app's
+# destination.namespace.
+
+resources:
+  - garage-workspace.yaml   # cluster-scoped Crossplane Workspace (sleep-snore bucket + write key)
+  - externalsecret.yaml     # ESO → snore-deploy-ssh Secret (the deploy SSH key)
+  - deploy-hook.yaml        # ArgoCD PostSync hook Job — runs ansible against the Pi
+  - deploy-cron.yaml        # nightly belt for the offline-Pi gap
+
+configMapGenerator:
+  - name: snore-deploy
+    files:
+      - deploy/deploy.yml
+      - deploy/compose.yaml
+      - deploy/snore.env
+      - deploy/inventory.ini
+      - deploy/known_hosts
+    options:
+      # stable name (the Job/CronJob reference `snore-deploy`); content changes re-run the hook.
+      disableNameSuffixHash: true

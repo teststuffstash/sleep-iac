@@ -16,12 +16,16 @@ echo "==> kubeconform (raw manifests; CRDs → ignore-missing-schemas)"
 # Applications — kubeconform has no schema for those, so -ignore-missing-schemas skips them and
 # still hard-validates the core kinds (Job, PVC, ConfigMap). sleep-tracking/ is kustomize (built
 # below); its agent/ dir (kubectl-applied, not in the kustomization) is validated here directly.
-kubeconform -summary -strict -ignore-missing-schemas apps snore-recorder sleep-tracking/agent
+kubeconform -summary -strict -ignore-missing-schemas apps sleep-tracking/agent
 
-echo "==> kustomize build sleep-tracking | kubeconform"
-# sleep-tracking renders via kustomize (configMapGenerator embeds the raw dashboard JSON into a
-# ConfigMap, so a bare .json never reaches ArgoCD as a manifest). Build it, then validate the output.
+echo "==> kustomize build sleep-tracking + snore-recorder | kubeconform"
+# Both render via kustomize (configMapGenerator embeds raw files — the dashboard JSON for
+# sleep-tracking, the ansible playbook/compose for snore-recorder — so they never reach ArgoCD as
+# bare manifests). Build each, then validate the output. (snore-recorder/deploy/ holds the ansible
+# playbook + known_hosts, which are ConfigMap DATA, not k8s manifests — hence the kustomize build,
+# not a raw kubeconform scan.)
 kustomize build sleep-tracking | kubeconform -summary -strict -ignore-missing-schemas -
+kustomize build snore-recorder | kubeconform -summary -strict -ignore-missing-schemas -
 
 # --- the version pin is the whole point of this repo: prove the pinned chart actually renders with
 #     our values. The image tag is NOT set here (it defaults to the chart appVersion), so there's no
