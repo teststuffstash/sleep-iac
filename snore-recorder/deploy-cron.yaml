@@ -28,7 +28,7 @@ spec:
               args:
                 - |
                   for i in $(seq 30); do [ -s /secrets/id_ed25519 ] && break; echo "waiting for deploy key ($i)"; sleep 2; done
-                  cp /secrets/id_ed25519 /tmp/id_ed25519 && chmod 0400 /tmp/id_ed25519
+                  printf '%s\n' "$(cat /secrets/id_ed25519)" > /tmp/id_ed25519 && chmod 0400 /tmp/id_ed25519
                   ansible-galaxy collection install ansible.posix >/dev/null 2>&1 || true
                   cd /config
                   exec ansible-playbook -i inventory.ini deploy.yml \
