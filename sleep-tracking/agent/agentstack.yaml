@@ -15,8 +15,16 @@ spec:
   workerModelFallbacks: [tencent/hy3, qwen/qwen3-coder]
   repos:
     - name: sleep-iac # context-only: CI deploys this repo, agents never run pods in it (FU-052 exclusion)
+      # Claim-owned label set (FU-068, sleep migration 2026-07-25): pre-migration diff — live set
+      # was the platform taxonomy EXACTLY on all three repos, nothing custom to lose. Explicit
+      # extra: [] (server default) — bare {} stamps to {extra: []}, ArgoCD drifts. tofu/github
+      # still holds these labels in STATE — operator drops sleep repos from label_repos via
+      # `tofu state rm` (NOT destroy).
+      labels: { extra: [] }
     - name: snore-recorder # context-only: merge-path only; its ansible→Pi deploy is manual, no worker ns
+      labels: { extra: [] }
     - name: sleep-tracking
+      labels: { extra: [] }
       fixer:
         budgetUSD: 5 # USD/week standing ceiling (carried over)
         resetInterval: weekly
@@ -24,7 +32,12 @@ spec:
         # explicit (server defaults) — the API server stamps defaulted booleans into the stored
         # object, so omitting them leaves the ArgoCD app permanently OutOfSync (same rule as
         # extraFQDNs below; observed live 2026-07-16 when claudeTier's default landed).
-        docker: false
+        # Capability parity with oracle (2026-07-25, FU-095 prereq): the upcoming full-stack
+        # k3d/Grafana evidence gate (ADR-082 shape) needs a real docker daemon — rides run as
+        # kata microVM pods with a dind sidecar; the composition adds the registry FQDNs to the
+        # egress allowlist. No gate consumes it yet; flipped ahead so the spec/evidence work
+        # lands against ready plumbing.
+        docker: true
         claudeTier: false
         egress:
           profile: python # uv sync: pypi.org + files.pythonhosted.org on top of the baseline
