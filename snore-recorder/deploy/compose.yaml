@@ -6,6 +6,11 @@ services:
     image: ${SNORE_IMAGE:-ghcr.io/teststuffstash/snore-recorder:latest}
     container_name: snore-recorder
     restart: unless-stopped
+    # A redeploy sends SIGTERM: the daemon snapshots the in-progress night and exits,
+    # then the fresh container resumes it (device graceful-redeploy). Give it ample time
+    # to snapshot + upload before SIGKILL. (The deploy pulls the image BEFORE this stop,
+    # so the recreate gap is just stop+start — see deploy.yml.)
+    stop_grace_period: 30s
     # USB microphone (ALSA via PortAudio) + the Jabra Speak 410's HID node (call button
     # + off-hook LED). The app picks the mic by name substring (SNORE_INPUT_DEVICE);
     # mounting all of /dev/snd avoids card-index churn on reboot. hidraw0 is the Jabra's
