@@ -11,6 +11,18 @@ metadata:
 spec:
   mainRepo: homelab # sleep's coordination knowledge still lives in homelab docs
   coordinatorModel: sonnet
+  # FU-080 graduation (2026-07-26): sleep runs its OWN per-stack coordinate loop in sleep-agents,
+  # second stack after oracle. coordinator.enabled → the per-stack scan dispatches; loop.perStack →
+  # the loop machinery is rendered (coordinate-sleep cron + loop-git legs + SA/RBAC); loop.graduated
+  # → the GLOBAL scan SKIPS sleep so the two never double-run (the #134 label-race class) and the
+  # doorbell edge routes to sleep-agents. graduated must land WITH coordinator.enabled — enabling the
+  # coordinator without it would let the global scan dispatch sleep too. Reviewer stays on the GLOBAL
+  # reflex for now (per-stack review backstop is the remaining FU-080 leg; sleep reviews unaffected).
+  coordinator:
+    enabled: true
+  loop:
+    perStack: true
+    graduated: true
   workerModel: openrouter/deepseek/deepseek-v4-flash
   workerModelFallbacks: [tencent/hy3, qwen/qwen3-coder]
   repos:
