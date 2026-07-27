@@ -1,0 +1,8 @@
+# The sleep-iac FIXER namespace (FU-106): fixer ns == repo by platform convention; the
+# AgentStack Composition renders worker infra INTO it but deliberately never creates it
+# ("the namespace belongs to the repo's own deployment"). An -iac repo has no runtime
+# deployment, so the stack declares its fixer home here, via the app-of-apps.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sleep-iac
