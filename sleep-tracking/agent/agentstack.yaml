@@ -19,7 +19,10 @@ spec:
   # coordinator without it would let the global scan dispatch sleep too. Reviewer stays on the GLOBAL
   # reflex for now (per-stack review backstop is the remaining FU-080 leg; sleep reviews unaffected).
   coordinator:
-    enabled: true
+    # PAUSED 2026-07-27 (operator): the FU-090/086/092/099/102/104/106 machinery build is in
+    # flight and the freshly harvested spec-bug issues must not dispatch mid-build. Re-enable
+    # when the new platform legs land (the pausing session owns the flip-back).
+    enabled: false
   loop:
     perStack: true
     graduated: true
