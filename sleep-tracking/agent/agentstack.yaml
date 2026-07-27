@@ -29,7 +29,21 @@ spec:
   workerModel: openrouter/deepseek/deepseek-v4-flash
   workerModelFallbacks: [tencent/hy3, qwen/qwen3-coder]
   repos:
-    - name: sleep-iac # context-only: CI deploys this repo, agents never run pods in it (FU-052 exclusion)
+    - name: sleep-iac # FIXER since 2026-07-27 (FU-106): the -iac wrapper is agent-workable — the
+      # old "context-only, CI-only deploy repo" exclusion is DELIBERATELY re-opened here, via
+      # this reviewed claim diff (never silently): infra issues (e.g. #22 spec-publishing lane)
+      # dispatch the normal fixer flow; RED deploy/* bump PRs dispatch the distinct
+      # infra-enrich class (homelab coordinator brief §infra-enrich). The fixer ns `sleep-iac`
+      # is declared stack-side (apps/agent-ns.yaml — the Composition requires it to pre-exist).
+      fixer:
+        budgetUSD: 3
+        resetInterval: weekly
+        guardrail: none
+        claudeTier: false
+        docker: false
+        egress:
+          extraFQDNs: [] # explicit (server default) — ArgoCD diff hygiene
+          enforce: false # MONITOR first, like every new fixer ns (FU-020 rollout rings)
       # Claim-owned label set (FU-068, sleep migration 2026-07-25): pre-migration diff — live set
       # was the platform taxonomy EXACTLY on all three repos, nothing custom to lose. Explicit
       # extra: [] (server default) — bare {} stamps to {extra: []}, ArgoCD drifts. tofu/github

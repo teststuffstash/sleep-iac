@@ -1,0 +1,16 @@
+# FU-106: the sleep-iac fixer namespace (agent-ns/) — see agent-ns/namespace.yaml.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: sleep-iac-agent-ns
+  namespace: argocd
+spec:
+  project: sleep
+  source:
+    repoURL: https://github.com/teststuffstash/sleep-iac.git
+    targetRevision: master
+    path: agent-ns
+  destination:
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
