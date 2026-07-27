@@ -1,0 +1,43 @@
+# specs-publish.yaml — build and publish sleep-tracking's spec site to the
+# sleep-specs Garage bucket. Triggered by a repository_dispatch from the
+# sleep-tracking repo on merge to master (when specs/ changes), or manually.
+#
+# The writer key lives in the sleep-specs-garage-conn Secret (Crossplane Workspace
+# connection secret, ns sleep-tracking). The operator/coordinator sets the
+# corresponding GitHub Actions secrets from that ns Secret — never committed.
+name: specs-publish
+
+on:
+  repository_dispatch:
+    types: [specs-publish]
+  workflow_dispatch:
+    inputs:
+      specs_ref:
+        description: "sleep-tracking git ref to build (default: master)"
+        required: false
+        default: master
+
+jobs:
+  publish:
+    runs-on: homelab-ephemeral
+    steps:
+      - name: Checkout sleep-tracking
+        uses: actions/checkout@v4
+        with:
+          repository: teststuffstash/sleep-tracking
+          ref: ${{ github.event.client_payload.ref || github.event.inputs.specs_ref || 'master' }}
+          path: sleep-tracking
+
+      - name: Checkout sleep-iac (for the publish script)
+        uses: actions/checkout@v4
+        with:
+          path: sleep-iac
+
+      - name: Publish specs
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.SPECS_S3_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SPECS_S3_SECRET_KEY }}
+          S3_ENDPOINT: https://s3.teststuff.net
+          S3_REGION: garage
+        run: |
+          bash sleep-iac/scripts/specs-publish.sh sleep-tracking/specs
