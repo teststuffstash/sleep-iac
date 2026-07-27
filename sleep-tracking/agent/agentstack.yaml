@@ -28,8 +28,15 @@ spec:
   loop:
     perStack: true
     graduated: true
+  # Chain update 2026-07-27 (operator graduation of scout #40 entrants — homelab
+  # docs/agents/model-routing.md §M7 "evidence, not vibes": all three new entries carried clean
+  # canary verdicts). Free entrants front the fallback walk for the xs/sm queue; `claude/haiku`
+  # is the subscription-rail LAST backstop — strictly better than chain-exhaustion → agent/blocked
+  # (requires claudeTier: true in EVERY fixer block below so the claude-session Secret renders).
+  # PLANNED (operator 2026-07-27): flip workerModel → claude/haiku once sleep-tracking#48 lands
+  # (don't change the primary variable under the first unsupervised cycle); FU-095 router later.
   workerModel: openrouter/deepseek/deepseek-v4-flash
-  workerModelFallbacks: [tencent/hy3, qwen/qwen3-coder]
+  workerModelFallbacks: [poolside/laguna-s-2.1:free, inclusionai/ling-3.0-flash:free, poolside/laguna-s-2.1, tencent/hy3, qwen/qwen3-coder, claude/haiku]
   repos:
     - name: sleep-iac # FIXER since 2026-07-27 (FU-106): the -iac wrapper is agent-workable — the
       # old "context-only, CI-only deploy repo" exclusion is DELIBERATELY re-opened here, via
@@ -42,7 +49,10 @@ spec:
         budgetUSD: 3
         resetInterval: weekly
         guardrail: none
-        claudeTier: false
+        # true since the 2026-07-27 chain update: the stack chain ends in claude/haiku (and the
+        # primary flips there post-#48) — a dispatch here needs the claude-session Secret in ns
+        # sleep-iac, same trust domain as sleep-tracking's researcher rides.
+        claudeTier: true
         docker: false
         egress:
           extraFQDNs: [] # explicit (server default) — ArgoCD diff hygiene
