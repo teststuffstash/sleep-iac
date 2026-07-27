@@ -34,7 +34,8 @@ spec:
       # this reviewed claim diff (never silently): infra issues (e.g. #22 spec-publishing lane)
       # dispatch the normal fixer flow; RED deploy/* bump PRs dispatch the distinct
       # infra-enrich class (homelab coordinator brief §infra-enrich). The fixer ns `sleep-iac`
-      # is declared stack-side (apps/agent-ns.yaml — the Composition requires it to pre-exist).
+      # is PLATFORM-precreated (homelab argocd/platform/sleep-namespaces.yaml — tenants cannot
+      # create namespaces by project design; the first stack-side attempt was reverted).
       fixer:
         budgetUSD: 3
         resetInterval: weekly
