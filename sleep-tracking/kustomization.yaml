@@ -7,6 +7,9 @@ kind: Kustomization
 
 resources:
   - garage-workspace.yaml
+  - gateway.yaml
+  - httproute-specs.yaml
+  - specs-workspace.yaml
   - externalsecret.yaml
   # openrouter-key.yaml removed 2026-07-12: the standing budget key is rendered by the sleep
   # AgentStack claim (agent/agentstack.yaml, homelab FU-048) — one-time key re-mint expected.

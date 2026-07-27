@@ -1,0 +1,65 @@
+# App-owned Garage resources for the spec-publishing lane — reconciled in-cluster by
+# Crossplane provider-terraform (homelab ADR-076). Creates a website-enabled bucket
+# (sleep-specs) with a writer key (for CI to publish) and a reader key (for general
+# read access). The writer key is published to the connection Secret; CI reaches it
+# via GitHub Actions secrets set by the operator/coordinator from the ns Secret.
+#
+# deletionPolicy: Orphan — deleting this Workspace must NOT terraform destroy the
+# bucket (spec content is ephemeral but the bucket config is a platform resource).
+apiVersion: tf.upbound.io/v1beta1
+kind: Workspace
+metadata:
+  name: sleep-specs-garage
+spec:
+  deletionPolicy: Orphan
+  providerConfigRef:
+    name: default
+  forProvider:
+    source: Inline
+    module: |
+      resource "garage_bucket" "sleep_specs" {
+        global_alias          = "sleep-specs"
+        max_size              = 1073741824  # 1Gi — generous for a full overwrite each publish
+        website_enabled       = true
+        website_index_document = "index.html"
+      }
+
+      # Writer key — CI uses this to sync the built spec site.
+      resource "garage_key" "specs_writer" {
+        name = "sleep-specs-writer"
+      }
+
+      # Reader key — for general read access (e.g. monitoring, debugging).
+      resource "garage_key" "specs_reader" {
+        name = "sleep-specs-reader"
+      }
+
+      resource "garage_bucket_permission" "writer" {
+        bucket_id     = garage_bucket.sleep_specs.id
+        access_key_id = garage_key.specs_writer.id
+        read          = true
+        write         = true
+        owner         = false
+      }
+
+      resource "garage_bucket_permission" "reader" {
+        bucket_id     = garage_bucket.sleep_specs.id
+        access_key_id = garage_key.specs_reader.id
+        read          = true
+        write         = false
+        owner         = false
+      }
+
+      output "bucket_id" {
+        value = garage_bucket.sleep_specs.id
+      }
+      output "specs_s3_access_key_id" {
+        value = garage_key.specs_writer.id
+      }
+      output "specs_s3_secret_key" {
+        value     = garage_key.specs_writer.secret_access_key
+        sensitive = true
+      }
+  writeConnectionSecretToRef:
+    namespace: sleep-tracking
+    name: sleep-specs-garage-conn

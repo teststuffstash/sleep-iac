@@ -1,0 +1,29 @@
+# sleep stack Gateway — the Cilium-managed LB that terminates *.sleep.teststuff.net
+# traffic inside the cluster. The platform has wired the wildcard (homelab):
+#   - *.sleep.teststuff.net → VIP 192.168.40.26 (HAProxy frontend → Unbound override)
+#   - cilium GatewayClass + Gateway API CRDs installed
+#   - cross-namespace ReferenceGrant in ns garage for garage-s3
+# This Gateway is the stack's own LB — zero further homelab changes needed (ADR-092).
+#
+# TLS terminates upstream at OPNsense HAProxy (wildcard cert); the listener is plain
+# HTTP and host-routes on the preserved Host header.
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: sleep
+  namespace: sleep-tracking
+  labels:
+    bgp: advertise
+spec:
+  gatewayClassName: cilium
+  addresses:
+    - type: IPAddress
+      value: 192.168.40.26
+  infrastructure:
+    labels:
+      bgp: advertise
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      hostname: "*.sleep.teststuff.net"

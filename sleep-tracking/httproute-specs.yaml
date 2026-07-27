@@ -1,0 +1,30 @@
+# HTTPRoute for specs.sleep.teststuff.net → Garage website endpoint.
+# Routes the spec-publishing subdomain to the Garage S3 website backend, rewriting
+# the Host header so Garage keys the bucket off the alias (sleep-specs.teststuff.net)
+# under rootDomain .teststuff.net.
+#
+# The cross-namespace ReferenceGrant in ns garage permits this route.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: specs
+  namespace: sleep-tracking
+spec:
+  parentRefs:
+    - name: sleep
+      namespace: sleep-tracking
+  hostnames:
+    - "specs.sleep.teststuff.net"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            hostname: sleep-specs.teststuff.net
+      backendRefs:
+        - name: garage-s3
+          namespace: garage
+          port: 3902
