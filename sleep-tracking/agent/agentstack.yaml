@@ -19,10 +19,12 @@ spec:
   # coordinator without it would let the global scan dispatch sleep too. Reviewer stays on the GLOBAL
   # reflex for now (per-stack review backstop is the remaining FU-080 leg; sleep reviews unaffected).
   coordinator:
-    # PAUSED 2026-07-27 (operator): the FU-090/086/092/099/102/104/106 machinery build is in
-    # flight and the freshly harvested spec-bug issues must not dispatch mid-build. Re-enable
-    # when the new platform legs land (the pausing session owns the flip-back).
-    enabled: false
+    # RE-ENABLED 2026-07-27 (the pausing session's flip-back): the platform build landed —
+    # C6 merged-closeout + harvest, arbitrate, ci-red-stale, infra-enrich (-iac dispatch,
+    # sleep-iac is a fixer now), SLO teeth, responder v2, deterministic revert. The queue it
+    # rides: sleep-tracking#48 (system-test gate) → the spec bugs (#39-47; #42/#43 dep-held
+    # on #48) → sleep-iac#22/#25.
+    enabled: true
   loop:
     perStack: true
     graduated: true
