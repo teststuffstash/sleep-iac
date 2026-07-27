@@ -50,7 +50,7 @@ spec:
         # egress allowlist. No gate consumes it yet; flipped ahead so the spec/evidence work
         # lands against ready plumbing.
         docker: true
-        claudeTier: false
+        claudeTier: true # FU-105 researcher rides (claude harness) on this repo — renders the claude-session ref Secret
         egress:
           profile: python # uv sync: pypi.org + files.pythonhosted.org on top of the baseline
           extraFQDNs: [] # explicit (server default) — earned from a harvest, currently none; also keeps ArgoCD diff clean
