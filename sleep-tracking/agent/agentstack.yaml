@@ -39,10 +39,15 @@ spec:
   # canary verdicts). Free entrants front the fallback walk for the xs/sm queue; `claude/haiku`
   # is the subscription-rail LAST backstop — strictly better than chain-exhaustion → agent/blocked
   # (requires claudeTier: true in EVERY fixer block below so the claude-session Secret renders).
-  # PLANNED (operator 2026-07-27): flip workerModel → claude/haiku once sleep-tracking#48 lands
-  # (don't change the primary variable under the first unsupervised cycle); FU-095 router later.
-  workerModel: openrouter/deepseek/deepseek-v4-flash
-  workerModelFallbacks: [poolside/laguna-s-2.1:free, inclusionai/ling-3.0-flash:free, poolside/laguna-s-2.1, tencent/hy3, qwen/qwen3-coder, claude/haiku]
+  # FLIPPED to claude/haiku 2026-07-28 (operator, Phase 4). Brought forward from the "once #48 lands"
+  # plan: deepseek-v4-flash proved too weak for #48 (3 rounds, gave up as "infra not a bug"; a
+  # clean-but-useless exit is not a strike, so the chain couldn't self-heal to a stronger model).
+  # The capable subscription model is now the primary so the re-dispatched #48 (+ the sleep queue)
+  # runs on real capability; FU-088 latch/headroom gate throttles the subscription load. The free/
+  # cheap OpenRouter entrants stay as the STRIKE/latch fallback walk (claude/haiku dropped from the
+  # tail — it's the primary now). FU-095 task-class router still later.
+  workerModel: claude/haiku
+  workerModelFallbacks: [poolside/laguna-s-2.1:free, inclusionai/ling-3.0-flash:free, poolside/laguna-s-2.1, tencent/hy3, qwen/qwen3-coder]
   repos:
     - name: sleep-iac # FIXER since 2026-07-27 (FU-106): the -iac wrapper is agent-workable — the
       # old "context-only, CI-only deploy repo" exclusion is DELIBERATELY re-opened here, via
