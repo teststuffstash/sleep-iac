@@ -24,7 +24,13 @@ spec:
     # sleep-iac is a fixer now), SLO teeth, responder v2, deterministic revert. The queue it
     # rides: sleep-tracking#48 (system-test gate) → the spec bugs (#39-47; #42/#43 dep-held
     # on #48) → sleep-iac#22/#25.
-    enabled: true
+    #
+    # PAUSED 2026-07-28 (meta-14, operator "pause the world"): frozen while the operator
+    # investigates the machinery gaps exposed on #48 — deepseek-v4-flash ran 3 no-op ci-red-stale
+    # rounds (0 commits, false ci_passed=True on a red CI), and each no-op comment reset the
+    # ci-red-stale staleness clock. The report-only scan still runs; it will NOT dispatch. Flip
+    # back to true to resume.
+    enabled: false
   loop:
     perStack: true
     graduated: true
