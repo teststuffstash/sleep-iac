@@ -14,16 +14,8 @@ resources:
   # openrouter-key.yaml removed 2026-07-12: the standing budget key is rendered by the sleep
   # AgentStack claim (agent/agentstack.yaml, homelab FU-048) — one-time key re-mint expected.
 
-# Sleep Overview dashboard (FU-025: moved out of tofu/monitoring.tf). The Grafana sidecar discovers
-# dashboard ConfigMaps labelled `grafana_dashboard` across ALL namespaces, so it lands here in
-# sleep-tracking (not monitoring) and a fix becomes a PR ArgoCD syncs — no `tofu apply`. The dashboard
-# binds to datasource uid `sleep-notes` (the frser SQLite datasource, still platform-owned in the
-# Grafana Helm release) — that uid is the stable contract; don't let it drift.
-configMapGenerator:
-  - name: grafana-dashboard-sleep-overview
-    files:
-      - sleep-overview.json
-    options:
-      labels:
-        grafana_dashboard: "1"
-      disableNameSuffixHash: true # stable CM name (sidecar keys on the label + the dashboard uid)
+# Sleep Overview dashboard removed 2026-07-28 (issue #25, operator ruling 2026-07-27 resolving
+# SLP-SRV-DRIFT): the dashboard now ships in the sleep-ingester CHART (sleep-tracking#48), rendered
+# as the `sleep-ingester-dashboard` ConfigMap and discovered by the same `grafana_dashboard` sidecar
+# label. Deleting the hand-carried generator (sleep-overview.json + this entry) leaves exactly ONE
+# dashboard ConfigMap. Pinned chart carrying it: 2026.7.28-g55948c165977 (apps/sleep-ingester.yaml).
