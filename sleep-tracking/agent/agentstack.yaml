@@ -16,8 +16,8 @@ spec:
   # the loop machinery is rendered (coordinate-sleep cron + loop-git legs + SA/RBAC); loop.graduated
   # → the GLOBAL scan SKIPS sleep so the two never double-run (the #134 label-race class) and the
   # doorbell edge routes to sleep-agents. graduated must land WITH coordinator.enabled — enabling the
-  # coordinator without it would let the global scan dispatch sleep too. Reviewer stays on the GLOBAL
-  # reflex for now (per-stack review backstop is the remaining FU-080 leg; sleep reviews unaffected).
+  # coordinator without it would let the global scan dispatch sleep too. Reviewer graduated to
+  # per-stack 2026-07-31 (reviewer.enabled below) as the operator phases out the GLOBAL reflexes.
   coordinator:
     # RE-ENABLED 2026-07-27 (the pausing session's flip-back): the platform build landed —
     # C6 merged-closeout + harvest, arbitrate, ci-red-stale, infra-enrich (-iac dispatch,
@@ -35,11 +35,13 @@ spec:
     perStack: true
     graduated: true
   reviewer:
-    # explicit (server default) — sleep reviews ride the GLOBAL reflex for now (see the FU-080 note
-    # above; per-stack review backstop is the remaining leg). The API server stamps this defaulted
-    # bool into the stored object, so omitting it leaves the ArgoCD app permanently OutOfSync (same
-    # rule as the fixer egress/label defaults below).
-    enabled: false
+    # ENABLED 2026-07-31 (operator, phasing out the GLOBAL review reflex): sleep now runs its OWN
+    # per-stack review — the review-sleep cron + the FU-100 edge trigger route sleep PR reviews into
+    # sleep-agents, and the global review workflow DEFERS graduated stacks (stacks.json guard), so
+    # this is a clean handoff, not a double-review (reviewing is idempotent + budget-free anyway).
+    # Matches oracle. Kept explicit (not omitted) so the API-server-defaulted bool doesn't drift the
+    # ArgoCD app OutOfSync — same rule as the fixer egress/label defaults below.
+    enabled: true
   # Chain update 2026-07-27 (operator graduation of scout #40 entrants — homelab
   # docs/agents/model-routing.md §M7 "evidence, not vibes": all three new entries carried clean
   # canary verdicts). Free entrants front the fallback walk for the xs/sm queue; `claude/haiku`
