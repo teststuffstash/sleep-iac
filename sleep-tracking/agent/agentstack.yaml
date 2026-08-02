@@ -54,12 +54,17 @@ spec:
   # runs on real capability; FU-088 latch/headroom gate throttles the subscription load. The free/
   # cheap OpenRouter entrants stay as the STRIKE/latch fallback walk (claude/haiku dropped from the
   # tail — it's the primary now). FU-095 task-class router still later.
-  # ADR-096 addendum 4 live test (operator, 2026-08-02): FREE models lead the chain
-  # deliberately — they are the cheap instability canaries, and the router's cooldown loop
-  # (429 burst → temporary hold → half-open re-pick) needs real failure weather to observe.
-  # claude/haiku moves to the chain tail (weekly pool relief + cross-rail last resort).
-  workerModel: poolside/laguna-s-2.1:free
-  workerModelFallbacks: [inclusionai/ling-3.0-flash:free, deepseek/deepseek-v4-flash, tencent/hy3, qwen/qwen3-coder, claude/haiku]
+  # ADR-096 addendum 4 live test (operator, 2026-08-02): FREE models led the chain as
+  # deliberate instability canaries. Test yield after 3 clean rides (#92/#96/#99, PR#106-108):
+  # free-first WORKS in good weather, but no cooldown episodes materialized (laguna 100% 2xx
+  # all day) and its ~306s turns run ≈3× a paid ride's wall clock — one ride even outlived the
+  # old 2h key window. Chain redirected same day (operator): cheap PAID leads — xiaomi/mimo-v2.5
+  # (tooled fp8 endpoints ~$0.14/M in, ≥95 uptime) then tencent/hy3 (already graduated, mid-chain
+  # since 07-27). Frees drop off the walk entirely: after a paid-lead strike they'd re-add
+  # 401/429 noise exactly when recovery wants capability; passive provider_events keep scoring
+  # them without burning rides. claude/haiku stays the cross-rail last resort.
+  workerModel: xiaomi/mimo-v2.5
+  workerModelFallbacks: [tencent/hy3, deepseek/deepseek-v4-flash, qwen/qwen3-coder, claude/haiku]
   repos:
     - name: sleep-iac # FIXER since 2026-07-27 (FU-106): the -iac wrapper is agent-workable — the
       # old "context-only, CI-only deploy repo" exclusion is DELIBERATELY re-opened here, via
