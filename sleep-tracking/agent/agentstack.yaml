@@ -54,8 +54,12 @@ spec:
   # runs on real capability; FU-088 latch/headroom gate throttles the subscription load. The free/
   # cheap OpenRouter entrants stay as the STRIKE/latch fallback walk (claude/haiku dropped from the
   # tail — it's the primary now). FU-095 task-class router still later.
-  workerModel: claude/haiku
-  workerModelFallbacks: [poolside/laguna-s-2.1:free, inclusionai/ling-3.0-flash:free, poolside/laguna-s-2.1, tencent/hy3, qwen/qwen3-coder]
+  # ADR-096 addendum 4 live test (operator, 2026-08-02): FREE models lead the chain
+  # deliberately — they are the cheap instability canaries, and the router's cooldown loop
+  # (429 burst → temporary hold → half-open re-pick) needs real failure weather to observe.
+  # claude/haiku moves to the chain tail (weekly pool relief + cross-rail last resort).
+  workerModel: poolside/laguna-s-2.1:free
+  workerModelFallbacks: [inclusionai/ling-3.0-flash:free, deepseek/deepseek-v4-flash, tencent/hy3, qwen/qwen3-coder, claude/haiku]
   repos:
     - name: sleep-iac # FIXER since 2026-07-27 (FU-106): the -iac wrapper is agent-workable — the
       # old "context-only, CI-only deploy repo" exclusion is DELIBERATELY re-opened here, via
