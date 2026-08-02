@@ -92,8 +92,23 @@ spec:
       # still holds these labels in STATE — operator drops sleep repos from label_repos via
       # `tofu state rm` (NOT destroy).
       labels: { extra: [] }
-    - name: snore-recorder # context-only: merge-path only; its ansible→Pi deploy is manual, no worker ns
+    - name: snore-recorder
+      # FIXER since 2026-08-02 (FU-051 close-out — operator "put snore-recorder fully in the
+      # loop"): the old context-only rationale ("ansible→Pi deploy is manual") went stale when
+      # the PostSync hook + nightly converge CronJob landed (sleep-iac#13); the deploy pin moves
+      # off :latest via snore-recorder's build (deploy-pin.sh, snore-recorder#15). Fixer ns ==
+      # repo == the existing platform-precreated `snore-recorder` ns (the deploy Jobs' home).
       labels: { extra: [] }
+      fixer:
+        budgetUSD: 2 # small device repo — pytest-only gate
+        resetInterval: weekly
+        guardrail: none
+        claudeTier: true # the chain ends in claude/haiku — renders the claude-session Secret
+        docker: false
+        egress:
+          profile: python # pytest deps ride pip (device/requirements.txt) — pypi + files.pythonhosted
+          extraFQDNs: [] # explicit (server default) — ArgoCD diff hygiene
+          enforce: false # MONITOR first, like every new fixer ns (FU-020 rollout rings)
     - name: sleep-tracking
       labels: { extra: [] }
       fixer:
