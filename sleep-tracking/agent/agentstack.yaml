@@ -99,7 +99,7 @@ spec:
       fixer:
         budgetUSD: 5 # USD/week standing ceiling (carried over)
         resetInterval: weekly
-        guardrail: only-free
+        guardrail: none # XRD defaults to only-free — explicit none, or the server stamps the restriction back. Paid models lead the worker walk since #56; only-free 403s them before spend (FU-024).
         # explicit (server defaults) — the API server stamps defaulted booleans into the stored
         # object, so omitting them leaves the ArgoCD app permanently OutOfSync (same rule as
         # extraFQDNs below; observed live 2026-07-16 when claudeTier's default landed).
