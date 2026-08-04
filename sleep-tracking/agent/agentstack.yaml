@@ -63,8 +63,11 @@ spec:
   # since 07-27). Frees drop off the walk entirely: after a paid-lead strike they'd re-add
   # 401/429 noise exactly when recovery wants capability; passive provider_events keep scoring
   # them without burning rides. claude/haiku stays the cross-rail last resort.
+  # Chain reset 2026-08-03 (operator, evidence-based — homelab scout #81 + MCP evals):
+  # 0731 = the flash successor second slot; qwen3-coder EVICTED (weak on every AA axis);
+  # claude/haiku stays the cross-rail availability tail.
   workerModel: xiaomi/mimo-v2.5
-  workerModelFallbacks: [tencent/hy3, deepseek/deepseek-v4-flash, qwen/qwen3-coder, claude/haiku]
+  workerModelFallbacks: [deepseek/deepseek-v4-flash-0731, tencent/hy3, claude/haiku]
   repos:
     - name: sleep-iac # FIXER since 2026-07-27 (FU-106): the -iac wrapper is agent-workable — the
       # old "context-only, CI-only deploy repo" exclusion is DELIBERATELY re-opened here, via
@@ -92,8 +95,23 @@ spec:
       # still holds these labels in STATE — operator drops sleep repos from label_repos via
       # `tofu state rm` (NOT destroy).
       labels: { extra: [] }
-    - name: snore-recorder # context-only: merge-path only; its ansible→Pi deploy is manual, no worker ns
+    - name: snore-recorder
+      # FIXER since 2026-08-02 (FU-051 close-out — operator "put snore-recorder fully in the
+      # loop"): the old context-only rationale ("ansible→Pi deploy is manual") went stale when
+      # the PostSync hook + nightly converge CronJob landed (sleep-iac#13); the deploy pin moves
+      # off :latest via snore-recorder's build (deploy-pin.sh, snore-recorder#15). Fixer ns ==
+      # repo == the existing platform-precreated `snore-recorder` ns (the deploy Jobs' home).
       labels: { extra: [] }
+      fixer:
+        budgetUSD: 2 # small device repo — pytest-only gate
+        resetInterval: weekly
+        guardrail: none
+        claudeTier: true # the chain ends in claude/haiku — renders the claude-session Secret
+        docker: false
+        egress:
+          profile: python # pytest deps ride pip (device/requirements.txt) — pypi + files.pythonhosted
+          extraFQDNs: [] # explicit (server default) — ArgoCD diff hygiene
+          enforce: false # MONITOR first, like every new fixer ns (FU-020 rollout rings)
     - name: sleep-tracking
       labels: { extra: [] }
       fixer:
