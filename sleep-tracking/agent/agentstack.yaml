@@ -114,6 +114,16 @@ spec:
           enforce: false # MONITOR first, like every new fixer ns (FU-020 rollout rings)
     - name: sleep-tracking
       labels: { extra: [] }
+      # ADR-089 quota-as-contract, ARMED 2026-08-07. The caps existed in the XRD from day one and
+      # NO claim ever set them, so `kubectl get resourcequota -A` was empty cluster-wide and the
+      # "over-cap PVC fails fast at CREATE" promise was never in force. What actually happened
+      # instead: on 2026-07-25 nine rides held 9x20Gi of scratch at once, pushed both bulk disks
+      # past the scheduling cap, and every subsequent ride+worker wedged in Init.
+      # scratch = 20Gi x 3 concurrent docker rides. Over that, the FOURTH ride's PVC is refused
+      # with a legible quota error instead of silently exhausting the pool for every other stack.
+      storage:
+        standard: "10Gi" # agent-uv-cache (5Gi) + headroom
+        scratch: "60Gi"
       fixer:
         budgetUSD: 5 # USD/week standing ceiling (carried over)
         resetInterval: weekly
