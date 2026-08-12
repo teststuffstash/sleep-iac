@@ -34,6 +34,8 @@ spec:
   loop:
     perStack: true
     graduated: true
+  modelDeny: []         # declared-not-defaulted (same drift class, 2026-08-12)
+  routerMode: shadow    # declared-not-defaulted (ADR-096; same drift class, 2026-08-12)
   reviewer:
     # ENABLED 2026-07-31 (operator, phasing out the GLOBAL review reflex): sleep now runs its OWN
     # per-stack review — the review-sleep cron + the FU-100 edge trigger route sleep PR reviews into
@@ -42,6 +44,7 @@ spec:
     # Matches oracle. Kept explicit (not omitted) so the API-server-defaulted bool doesn't drift the
     # ArgoCD app OutOfSync — same rule as the fixer egress/label defaults below.
     enabled: true
+    goalModel: sonnet   # declared-not-defaulted (M10; same drift class, 2026-08-12)
   # Chain update 2026-07-27 (operator graduation of scout #40 entrants — homelab
   # docs/agents/model-routing.md §M7 "evidence, not vibes": all three new entries carried clean
   # canary verdicts). Free entrants front the fallback walk for the xs/sm queue; `claude/haiku`
@@ -124,6 +127,8 @@ spec:
       storage:
         standard: "10Gi" # agent-uv-cache (5Gi) + headroom
         scratch: "60Gi"
+        bulk: "0"
+        fast: "0" # declared-not-defaulted: omitted server-default fields drift the ArgoCD app OutOfSync (homelab agent-fixer.yaml doctrine; seen live 2026-08-12)
       fixer:
         budgetUSD: 5 # USD/week standing ceiling (carried over)
         resetInterval: weekly
