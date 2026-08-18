@@ -71,7 +71,13 @@ spec:
   # Chain reset 2026-08-03 (operator, evidence-based — homelab scout #81 + MCP evals):
   # 0731 = the flash successor second slot; qwen3-coder EVICTED (weak on every AA axis);
   # claude/haiku stays the cross-rail availability tail.
-  workerModel: xiaomi/mimo-v2.5
+  # Chain change 2026-08-18 (operator, strike-evidenced): mimo-v2.5 EVICTED — struck on three
+  # distinct issues in one day (sleep-tracking#122/#123/#124, 2026-08-17, all
+  # goose-32602-truncation; #123's OR-flash fallback struck too). Primary moves to the Go rail
+  # (ADR-107 dogfood extending to stacks): claude-harness ride, so the goose truncation class is
+  # structurally out; OR flash-0731 stays first fallback = same family on an INDEPENDENT rail
+  # (M12), claude/haiku the cross-rail tail.
+  workerModel: opencode-go/deepseek-v4-flash
   workerModelFallbacks: [deepseek/deepseek-v4-flash-0731, tencent/hy3, claude/haiku]
   repos:
     - name: sleep-iac # FIXER since 2026-07-27 (FU-106): the -iac wrapper is agent-workable — the
