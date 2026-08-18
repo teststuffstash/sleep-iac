@@ -9,7 +9,9 @@ kind: AgentStack
 metadata:
   name: sleep
 spec:
-  mainRepo: homelab # sleep's coordination knowledge still lives in homelab docs
+  mainRepo: sleep-tracking # its own repo since the specs tree landed (FU-095 prep); was homelab —
+  # the stale default conflated sleep+platform dispatch-phase metrics into one pushgateway group
+  # (project="homelab"), homelab#459 secondary finding
   coordinatorModel: sonnet
   # FU-080 graduation (2026-07-26): sleep runs its OWN per-stack coordinate loop in sleep-agents,
   # second stack after oracle. coordinator.enabled → the per-stack scan dispatches; loop.perStack →
