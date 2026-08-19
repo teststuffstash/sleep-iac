@@ -77,8 +77,12 @@ spec:
   # (ADR-107 dogfood extending to stacks): claude-harness ride, so the goose truncation class is
   # structurally out; OR flash-0731 stays first fallback = same family on an INDEPENDENT rail
   # (M12), claude/haiku the cross-rail tail.
-  workerModel: opencode-go/deepseek-v4-flash
-  workerModelFallbacks: [deepseek/deepseek-v4-flash-0731, tencent/hy3, claude/haiku]
+  # GO RAIL PARKED 2026-08-19 (operator, homelab#652 fleet finding): the opencode-go rail is
+  # MONTH-exhausted (console 100%/30d, resets ~2026-09-13), so the Go primary burned a 429 +
+  # AGENT_STRIKE + a recovery coordinator session on every dispatch. Primary reverts to the
+  # OR flash successor; re-flip decision rides homelab FU-181 at the reset.
+  workerModel: deepseek/deepseek-v4-flash-0731
+  workerModelFallbacks: [tencent/hy3, claude/haiku]
   repos:
     - name: sleep-iac # FIXER since 2026-07-27 (FU-106): the -iac wrapper is agent-workable — the
       # old "context-only, CI-only deploy repo" exclusion is DELIBERATELY re-opened here, via
