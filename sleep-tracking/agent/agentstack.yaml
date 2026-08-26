@@ -81,7 +81,11 @@ spec:
   # MONTH-exhausted (console 100%/30d, resets ~2026-09-13), so the Go primary burned a 429 +
   # AGENT_STRIKE + a recovery coordinator session on every dispatch. Primary reverts to the
   # OR flash successor; re-flip decision rides homelab FU-181 at the reset.
-  workerModel: deepseek/deepseek-v4-flash-0731
+  # 0731 → PLAIN flash (operator, 2026-08-26): the 0731 variant left the platform's
+  # model_tiers pending its harness×provider matrix classification (homelab-side — its only
+  # sleep ride, #123 r1 2026-08-17, died goose-32602; oracle #271/#272 same class same day).
+  # Plain flash carries a 101-clean/1-death fleet record on the same goose arm.
+  workerModel: deepseek/deepseek-v4-flash
   workerModelFallbacks: [tencent/hy3, claude/haiku]
   repos:
     - name: sleep-iac # FIXER since 2026-07-27 (FU-106): the -iac wrapper is agent-workable — the
