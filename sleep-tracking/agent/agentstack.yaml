@@ -37,7 +37,7 @@ spec:
     perStack: true
     graduated: true
   modelDeny: []         # declared-not-defaulted (same drift class, 2026-08-12)
-  routerMode: shadow    # declared-not-defaulted (ADR-096; same drift class, 2026-08-12)
+  routerMode: authoritative # CHAINLESS flip 2026-08-26 (was: shadow, declared-not-defaulted 2026-08-12) — see the chain block below
   reviewer:
     # ENABLED 2026-07-31 (operator, phasing out the GLOBAL review reflex): sleep now runs its OWN
     # per-stack review — the review-sleep cron + the FU-100 edge trigger route sleep PR reviews into
@@ -85,8 +85,15 @@ spec:
   # model_tiers pending its harness×provider matrix classification (homelab-side — its only
   # sleep ride, #123 r1 2026-08-17, died goose-32602; oracle #271/#272 same class same day).
   # Plain flash carries a 101-clean/1-death fleet record on the same goose arm.
-  workerModel: deepseek/deepseek-v4-flash
-  workerModelFallbacks: [tencent/hy3, claude/haiku]
+  # CHAINLESS (operator direction 2026-08-26, second stack after oracle-iac#387; ADR-096 §M9):
+  # this claim deliberately declares NO workerModel / workerModelFallbacks — the router's
+  # rotation universe (model_tiers ∩ rankings, class floors, strikes, cooldowns) supplies
+  # candidates per dispatch, and routerMode: authoritative makes the routed decision binding
+  # (the launcher refuses a chainless dispatch without a routed verdict — the hardcoded default
+  # never stands in). The 0731 truncation class that latched sleep-tracking#123's agent/error is
+  # out of the rotation by construction (0731 left model_tiers, homelab#960); the claudeTier
+  # blocks below stay — the subscription rail remains a routed candidate and the claude-session
+  # ref Secret must keep rendering.
   repos:
     - name: sleep-iac # FIXER since 2026-07-27 (FU-106): the -iac wrapper is agent-workable — the
       # old "context-only, CI-only deploy repo" exclusion is DELIBERATELY re-opened here, via
