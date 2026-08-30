@@ -18,8 +18,9 @@ services:
     devices:
       - /dev/snd:/dev/snd
       - /dev/hidraw0:/dev/hidraw0
-    # Garage S3 creds, provisioned from Infisical to a mode-600 host file. Ansible
-    # ensures this file exists before `up` (compose errors on a missing env_file).
+    # Garage S3 creds: a mode-600 host file synced by deploy.yml from Infisical (via ESO).
+    # `up -d` recreates the container when its content changes (env_file is in the config
+    # hash), so a key rotation lands without extra plumbing. Compose errors if it's missing.
     env_file:
       - /var/lib/snore-secrets/s3.env
     # Button-armed recording: the Jabra call button arms a night (green LED on, recording

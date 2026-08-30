@@ -1,14 +1,20 @@
 ---
-# Deploy-only playbook: update an ALREADY-PROVISIONED Pi (Docker + the mode-600
-# /var/lib/snore-secrets/s3.env are placed once at flash time via the snore-recorder repo's
-# provisioning; NOT re-fetched here, so this needs no Infisical — only the SSH key). Run in-cluster
-# by the ArgoCD PostSync hook Job + the nightly CronJob belt. Idempotent; safe to re-run.
+# Deploy-only playbook: update an ALREADY-PROVISIONED Pi (Docker installed at flash time). Run
+# in-cluster by the ArgoCD PostSync hook Job + the nightly CronJob belt. Idempotent; safe to re-run.
+#
+# The S3 write key (mode-600 /var/lib/snore-secrets/s3.env) IS synced here — from the ESO-rendered
+# `snore-s3-creds` Secret the Job mounts at /secrets-s3 — so a Garage key rotation converges onto
+# the Pi without a manual push (the 2026-08-24 incident gap). The task self-skips when no key file
+# is mounted (a control-host run, or ESO hasn't rendered the Secret yet — its volume is optional),
+# leaving the Pi's existing s3.env alone; the nightly belt converges it later.
 - name: Deploy snore-recorder
   hosts: snore
   gather_facts: false
   vars:
     snore_dir: /opt/snore-recorder
     deploy_key: "{{ lookup('ansible.builtin.env', 'DEPLOY_KEY_PATH') | default('/secrets/id_ed25519', true) }}"
+    # Controller-side path of the ESO-rendered key file; override for a control-host run.
+    s3_env_src: "{{ lookup('ansible.builtin.env', 'S3_ENV_PATH') | default('/secrets-s3/s3.env', true) }}"
   tasks:
     - name: App directory exists
       become: true
@@ -16,6 +22,28 @@
         path: "{{ snore_dir }}"
         state: directory
         mode: "0755"
+
+    # `is file` evaluates on the CONTROLLER (where the Secret is mounted) — skip, don't fail,
+    # when absent, so the playbook still runs from a control host without the mount.
+    - name: Secrets directory exists
+      become: true
+      ansible.builtin.file:
+        path: /var/lib/snore-secrets
+        state: directory
+        owner: root
+        group: root
+        mode: "0700"
+      when: s3_env_src is file
+
+    - name: Sync the S3 write key (rotation converge — Infisical via ESO)
+      become: true
+      ansible.builtin.copy:
+        src: "{{ s3_env_src }}"
+        dest: /var/lib/snore-secrets/s3.env
+        owner: root
+        group: root
+        mode: "0600"
+      when: s3_env_src is file
 
     - name: Sync compose.yaml + .env (SNORE_* config + image pin)
       become: true
