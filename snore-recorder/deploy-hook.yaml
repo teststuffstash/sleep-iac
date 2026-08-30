@@ -47,6 +47,7 @@ spec:
           volumeMounts:
             - { name: playbook, mountPath: /config, readOnly: true }
             - { name: ssh, mountPath: /secrets, readOnly: true }
+            - { name: s3, mountPath: /secrets-s3, readOnly: true }
           resources:
             requests: { cpu: 50m, memory: 96Mi }
             limits: { cpu: "1", memory: 256Mi }
@@ -55,3 +56,7 @@ spec:
           configMap: { name: snore-deploy }
         - name: ssh
           secret: { secretName: snore-deploy-ssh, defaultMode: 0400 }
+        # optional: a missing/not-yet-rendered Secret must not block a deploy — the playbook's
+        # s3.env sync self-skips and the nightly belt converges once ESO has rendered it.
+        - name: s3
+          secret: { secretName: snore-s3-creds, defaultMode: 0400, optional: true }

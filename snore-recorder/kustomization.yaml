@@ -13,6 +13,7 @@ kind: Kustomization
 resources:
   - garage-workspace.yaml   # cluster-scoped Crossplane Workspace (sleep-snore bucket + write key)
   - externalsecret.yaml     # ESO → snore-deploy-ssh Secret (the deploy SSH key)
+  - externalsecret-s3.yaml  # ESO → snore-s3-creds Secret (the Pi's S3 write key; rotation converge)
   - deploy-hook.yaml        # ArgoCD PostSync hook Job — runs ansible against the Pi
   - deploy-cron.yaml        # nightly belt for the offline-Pi gap
 
