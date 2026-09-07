@@ -22,14 +22,14 @@ jobs:
     runs-on: homelab-ephemeral
     steps:
       - name: Checkout sleep-tracking
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           repository: teststuffstash/sleep-tracking
           ref: ${{ github.event.client_payload.ref || github.event.inputs.specs_ref || 'master' }}
           path: sleep-tracking
 
       - name: Checkout sleep-iac (for the publish script)
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           path: sleep-iac
 
