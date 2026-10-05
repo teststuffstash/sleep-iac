@@ -13,11 +13,13 @@ services:
     stop_grace_period: 30s
     # USB microphone (ALSA via PortAudio) + the Jabra Speak 410's HID node (call button
     # + off-hook LED). The app picks the mic by name substring (SNORE_INPUT_DEVICE);
-    # mounting all of /dev/snd avoids card-index churn on reboot. hidraw0 is the Jabra's
-    # only HID interface on the Pi — override with SNORE_HIDRAW if it ever renumbers.
+    # mounting all of /dev/snd avoids card-index churn on reboot. The Jabra's HID node is
+    # reached through the udev symlink /dev/jabra-hidraw (99-snore-jabra-hidraw.rules, placed
+    # by deploy.yml) because the ECM8000-U mic exposes a HID interface too, so hidrawN
+    # numbering is enumeration-order luck; Docker resolves the symlink at container create.
     devices:
       - /dev/snd:/dev/snd
-      - /dev/hidraw0:/dev/hidraw0
+      - /dev/jabra-hidraw:/dev/hidraw0
     # Garage S3 creds, provisioned from Infisical to a mode-600 host file. Ansible
     # ensures this file exists before `up` (compose errors on a missing env_file).
     env_file:
@@ -32,8 +34,11 @@ services:
       SNORE_WINDOW_START: ${SNORE_WINDOW_START:-00:00}
       SNORE_WINDOW_END: ${SNORE_WINDOW_END:-09:00}
       SNORE_ARM_DELAY_MIN: ${SNORE_ARM_DELAY_MIN:-20}
-      # Mic name substring (e.g. "Jabra"); empty = default input device.
-      SNORE_INPUT_DEVICE: ${SNORE_INPUT_DEVICE:-Jabra}
+      # Mic name substring (ALSA card name); empty = default input device. The ECM8000-U
+      # only does 44.1/48/96 kHz stereo, hence the rate/channels (downmixed to mono in-app).
+      SNORE_INPUT_DEVICE: ${SNORE_INPUT_DEVICE:-ECM8000}
+      SNORE_SAMPLE_RATE: ${SNORE_SAMPLE_RATE:-48000}
+      SNORE_CHANNELS: ${SNORE_CHANNELS:-2}
       SNORE_DATA_DIR: /data
     # Store-and-forward spool: pending nights survive restarts / offline travel.
     volumes:
