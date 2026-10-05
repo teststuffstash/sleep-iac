@@ -1,0 +1,3 @@
+# Jabra Speak 410 (0b0e:0410) HID node -> /dev/jabra-hidraw, so compose.yaml can map the call
+# button regardless of hidrawN enumeration order (the ECM8000-U mic also exposes a HID interface).
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="0b0e", ATTRS{idProduct}=="0410", SYMLINK+="jabra-hidraw"

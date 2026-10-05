@@ -27,6 +27,21 @@
         - { src: compose.yaml, dest: compose.yaml }
         - { src: snore.env, dest: .env }
 
+    - name: Stable device name for the Jabra's HID node (/dev/jabra-hidraw)
+      # compose.yaml maps the symlink; without it the button rides on hidrawN enumeration
+      # order, which the ECM8000-U mic's own HID interface makes a coin flip per boot.
+      become: true
+      ansible.builtin.copy:
+        src: 99-snore-jabra-hidraw.rules
+        dest: /etc/udev/rules.d/99-snore-jabra-hidraw.rules
+        mode: "0644"
+      register: udev_rule
+
+    - name: Apply the udev rule to the already-plugged Jabra
+      become: true
+      ansible.builtin.shell: udevadm control --reload && udevadm trigger --subsystem-match=hidraw
+      when: udev_rule.changed
+
     - name: Self-heal the deploy public key into authorized_keys
       # Derived from the mounted private key so future runs never depend on a manually-planted
       # key. (The FIRST run still needs today's access to bootstrap — see the PR notes.)

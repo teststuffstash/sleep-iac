@@ -22,6 +22,7 @@ configMapGenerator:
       - deploy/deploy.yml
       - deploy/compose.yaml
       - deploy/snore.env
+      - deploy/99-snore-jabra-hidraw.rules
       - deploy/inventory.ini
       - deploy/known_hosts
     options:
