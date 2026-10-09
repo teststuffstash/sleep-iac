@@ -1,7 +1,15 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended", ":dependencyDashboard"],
-  "labels": ["dependencies"],
-  "rebaseWhen": "auto",
-  "description": "Renovate here is for THIS repo's own dependencies only (GitHub Actions in .github/workflows, devbox tools). It does NOT bump the sleep-ingester chart/image pins — those are driven by the sleep-tracking `deploy` workflow's version-bump PR (homelab docs/sleep-iac.md §Deploy pipeline), keyed on git sha, which Renovate can't order."
+  "description": "Overrides ONLY — the classification, cooldown and labels live in homelab's .github/renovate-global.json (applied to every repo; `extends`/`:dependencyDashboard` here were overridden by its `force` block anyway). Renovate here covers THIS repo's own third-party dependencies: GitHub Actions and the snore-recorder deploy runner image. The first-party pins (sleep-ingester chart/image, SNORE_IMAGE) are NOT Renovate's: the app repos' deploy-pin PRs move them (homelab docs/sleep-iac.md §Deploy pipeline), keyed on git sha, which Renovate can't order — the global ghcr.io/teststuffstash/** rule disables them.",
+  "kubernetes": {
+    "description": "The global `kubernetes` pattern is homelab's argocd/resources only, so the snore-recorder deploy Job/CronJob runner image (alpine/ansible) was never extracted. Appended to the global pattern; every per-stack manifest directory here.",
+    "managerFilePatterns": ["/^(sleep-tracking|snore-recorder)\\/[^/]+\\.ya?ml$/"]
+  },
+  "packageRules": [
+    {
+      "description": "The deploy runner image is pinned by digest as well as tag (the `# renovate: pin digest` intent on both manifests) — the hook and the nightly CronJob must run the identical image. The global digest rule takes the pin PR (automerge); tag patch/minor ride the global kubernetes deps-review lane.",
+      "matchPackageNames": ["alpine/ansible"],
+      "pinDigests": true
+    }
+  ]
 }
