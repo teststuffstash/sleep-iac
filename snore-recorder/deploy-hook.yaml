@@ -25,7 +25,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: ansible
-          image: alpine/ansible:2.18.1  # renovate: pin digest
+          image: alpine/ansible:2.18.1@sha256:22227b578da3371267201879f44de86569e9b531db536e1d9d2b83aed35b6cfc  # renovate: pin digest
           command: ["/bin/sh", "-ceu"]
           args:
             - |
