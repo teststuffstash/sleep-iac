@@ -105,8 +105,6 @@ spec:
       fixer:
         budgetUSD: 3
         resetInterval: weekly
-        rideSize: standard # explicit (server default): a default stamped inside the atomic repos[] list leaves ArgoCD OutOfSync forever (homelab docs/dependency-upgrades.md G4)
-        readOnlyGrants: [] # explicit (server default), same G4 reason
         guardrail: none
         # true since the 2026-07-27 chain update: the stack chain ends in claude/haiku (and the
         # primary flips there post-#48) — a dispatch here needs the claude-session Secret in ns
@@ -133,8 +131,6 @@ spec:
       fixer:
         budgetUSD: 2 # small device repo — pytest-only gate
         resetInterval: weekly
-        rideSize: standard # explicit (server default): a default stamped inside the atomic repos[] list leaves ArgoCD OutOfSync forever (homelab docs/dependency-upgrades.md G4)
-        readOnlyGrants: [] # explicit (server default), same G4 reason
         guardrail: none
         claudeTier: true # the chain ends in claude/haiku — renders the claude-session Secret
         docker: false
@@ -162,8 +158,6 @@ spec:
       fixer:
         budgetUSD: 5 # USD/week standing ceiling (carried over)
         resetInterval: weekly
-        rideSize: standard # explicit (server default): a default stamped inside the atomic repos[] list leaves ArgoCD OutOfSync forever (homelab docs/dependency-upgrades.md G4)
-        readOnlyGrants: [] # explicit (server default), same G4 reason
         guardrail: none # XRD defaults to only-free — explicit none, or the server stamps the restriction back. Paid models lead the worker walk since #56; only-free 403s them before spend (FU-024).
         # explicit (server defaults) — the API server stamps defaulted booleans into the stored
         # object, so omitting them leaves the ArgoCD app permanently OutOfSync (same rule as
