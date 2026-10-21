@@ -11,15 +11,20 @@ services:
     # to snapshot + upload before SIGKILL. (The deploy pulls the image BEFORE this stop,
     # so the recreate gap is just stop+start — see deploy.yml.)
     stop_grace_period: 30s
-    # USB microphone (ALSA via PortAudio) + the Jabra Speak 410's HID node (call button
-    # + off-hook LED). The app picks the mic by name substring (SNORE_INPUT_DEVICE);
-    # mounting all of /dev/snd avoids card-index churn on reboot. The Jabra's HID node is
-    # reached through the udev symlink /dev/jabra-hidraw (99-snore-jabra-hidraw.rules, placed
-    # by deploy.yml) because the ECM8000-U mic exposes a HID interface too, so hidrawN
-    # numbering is enumeration-order luck; Docker resolves the symlink at container create.
+    # USB microphone (ALSA via PortAudio). The app picks the mic by name substring
+    # (SNORE_INPUT_DEVICE); mounting all of /dev/snd avoids card-index churn on reboot.
     devices:
       - /dev/snd:/dev/snd
-      - /dev/jabra-hidraw:/dev/hidraw0
+    # The Jabra Speak 410's HID node (call button + off-hook LED) is HOT-PLUGGED: it is
+    # unplugged by day for work calls. A `devices:` entry is resolved once at container
+    # create and makes create fail outright when the node is absent (2026-10-19: a daytime
+    # deploy left the container in "Created", two nights lost). So the host's /dev is
+    # bind-mounted live and the hidraw char-device major is allowed instead; the app opens
+    # the udev symlink (99-snore-jabra-hidraw.rules, placed by deploy.yml — the ECM8000-U
+    # mic has a HID interface too, so hidrawN order is luck) and reconnects on replug.
+    # SNORE_HIDRAW_MAJOR is read from the Pi's /proc/devices by deploy.yml.
+    device_cgroup_rules:
+      - "c ${SNORE_HIDRAW_MAJOR:?SNORE_HIDRAW_MAJOR unset (deploy.yml writes it)}:* rw"
     # Garage S3 creds, provisioned from Infisical to a mode-600 host file. Ansible
     # ensures this file exists before `up` (compose errors on a missing env_file).
     env_file:
@@ -40,9 +45,11 @@ services:
       SNORE_SAMPLE_RATE: ${SNORE_SAMPLE_RATE:-48000}
       SNORE_CHANNELS: ${SNORE_CHANNELS:-2}
       SNORE_DATA_DIR: /data
+      SNORE_HIDRAW: /host-dev/jabra-hidraw
     # Store-and-forward spool: pending nights survive restarts / offline travel.
     volumes:
       - snore-data:/data
+      - /dev:/host-dev:ro
 
 volumes:
   snore-data:

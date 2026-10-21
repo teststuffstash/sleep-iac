@@ -17,19 +17,29 @@
         state: directory
         mode: "0755"
 
-    - name: Sync compose.yaml + .env (SNORE_* config + image pin)
+    - name: Read the hidraw char-device major (dynamic per kernel; compose allows it for the Jabra)
+      ansible.builtin.command: awk '$2 == "hidraw" { print $1 }' /proc/devices
+      register: hidraw_major
+      changed_when: false
+      failed_when: hidraw_major.stdout is not regex('^[0-9]+$')
+
+    - name: Sync compose.yaml
       become: true
       ansible.builtin.copy:
-        src: "{{ item.src }}"
-        dest: "{{ snore_dir }}/{{ item.dest }}"
+        src: compose.yaml
+        dest: "{{ snore_dir }}/compose.yaml"
         mode: "0644"
-      loop:
-        - { src: compose.yaml, dest: compose.yaml }
-        - { src: snore.env, dest: .env }
+
+    - name: Sync .env (SNORE_* config + image pin, plus the host's hidraw major)
+      become: true
+      ansible.builtin.copy:
+        content: "{{ lookup('ansible.builtin.file', 'snore.env') }}\nSNORE_HIDRAW_MAJOR={{ hidraw_major.stdout }}\n"
+        dest: "{{ snore_dir }}/.env"
+        mode: "0644"
 
     - name: Stable device name for the Jabra's HID node (/dev/jabra-hidraw)
-      # compose.yaml maps the symlink; without it the button rides on hidrawN enumeration
-      # order, which the ECM8000-U mic's own HID interface makes a coin flip per boot.
+      # The app opens the symlink (via compose's live /dev bind); without it the button rides on
+      # hidrawN enumeration order, which the ECM8000-U mic's own HID interface makes a coin flip.
       become: true
       ansible.builtin.copy:
         src: 99-snore-jabra-hidraw.rules
