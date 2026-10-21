@@ -22,7 +22,7 @@ spec:
     #    targetRevision per release. The package is public, so no repo credential is needed.
     - repoURL: ghcr.io/teststuffstash/charts
       chart: sleep-ingester
-      targetRevision: 2026.10.19-gb950789eaf0f
+      targetRevision: 2026.10.21-gf8fc47dc5f63
       helm:
         valueFiles:
           - $values/values/sleep-ingester.yaml
